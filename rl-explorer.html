@@ -1,0 +1,1623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RL Explorer — Taxonomy, Equations &amp; Venn</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.11.0/dist/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<style>
+  :root{
+    --surface-2:#ffffff; --surface-1:#f6f7f9; --surface-0:#eef0f3;
+    --text-primary:#1f2430; --text-secondary:#3b4252; --text-muted:#8b93a4;
+    --text-accent:#185FA5; --text-success:#0F6E56; --text-warning:#854F0B; --text-pro:#3C3489;
+    --bg-accent:#E6F1FB; --bg-success:#E1F5EE; --bg-warning:#FAEEDA; --bg-pro:#EEEDFE; --bg-danger:#FCEBEB; --text-danger:#A32D2D;
+    --border:#e6e8ee; --border-strong:#cdd2dc;
+    --radius:8px; --font-sans:'Segoe UI',system-ui,-apple-system,sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  body{ background:#fbfbfc; margin:0; padding:24px; font-family:var(--font-sans); color:var(--text-primary); }
+  .container{ max-width:760px; margin:0 auto; }
+  .head h1{ font-size:21px; font-weight:500; margin:0; }
+  .head p{ font-size:13px; color:var(--text-muted); margin:3px 0 0; }
+
+  .maintabs{ display:flex; gap:4px; background:var(--surface-1); border:0.5px solid var(--border); border-radius:11px; padding:5px; margin:16px 0 18px; position:sticky; top:8px; z-index:30; }
+  .maintabs button{ flex:1; border:none; background:transparent; color:var(--text-secondary); font:inherit; font-size:13px; padding:9px 6px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; }
+  .maintabs button.on{ background:var(--surface-2); color:var(--text-primary); font-weight:500; border:0.5px solid var(--border); }
+  .maintabs button i{ font-size:16px; }
+  .tabview{ display:none; }
+  .tabview.on{ display:block; }
+
+  .bar{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:0 0 12px; }
+  .bar input{ flex:1; min-width:150px; padding:7px 11px; border:0.5px solid var(--border); border-radius:var(--radius); background:var(--surface-2); color:var(--text-primary); font-size:13px; outline:none; }
+  .bar input:focus{ border-color:var(--text-accent); }
+  .b{ border:0.5px solid var(--border-strong); background:transparent; color:var(--text-secondary); border-radius:var(--radius); padding:6px 9px; font-size:12px; cursor:pointer; display:inline-flex; align-items:center; gap:5px; }
+  .b:hover{ background:var(--surface-1); }
+  .b i{ font-size:15px; }
+
+  .stage{ position:relative; height:560px; border:0.5px solid var(--border); border-radius:12px; background:var(--surface-1); overflow:hidden; cursor:grab; background-image:radial-gradient(var(--border) 1px, transparent 1px); background-size:22px 22px; }
+  .stage.drag{ cursor:grabbing; }
+  .world{ position:absolute; top:0; left:0; transform-origin:0 0; }
+  .world svg{ position:absolute; top:0; left:0; overflow:visible; pointer-events:none; }
+  .gnode{ position:absolute; box-sizing:border-box; width:198px; background:var(--surface-2); border:0.5px solid var(--border); border-left:3px solid var(--n-dot,var(--border)); border-radius:0 10px 10px 0; padding:9px 11px; cursor:pointer; user-select:none; }
+  .gnode:hover{ border-color:var(--border-strong); }
+  .gnode.sel{ border-color:var(--text-accent); box-shadow:0 0 0 1px var(--text-accent); }
+  .gnode.dim{ opacity:0.22; }
+  .gnode .gt{ font-size:13px; line-height:1.3; }
+  .gnode .gm{ font-size:11px; color:var(--text-muted); margin-top:3px; display:flex; align-items:center; gap:5px; }
+  .gnode .ct{ display:inline-flex; align-items:center; gap:4px; }
+  .gnode .cnt{ margin-left:auto; font-size:10.5px; color:var(--text-muted); border:0.5px solid var(--border); border-radius:999px; padding:0 6px; }
+  .gnode .chev{ font-size:14px; color:var(--text-muted); }
+  .dotc{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+  .panel{ margin-top:14px; border:0.5px solid var(--border); border-radius:12px; background:var(--surface-2); padding:14px 16px; }
+  .panel .ph{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; }
+  .panel .ph .pt{ font-size:15px; font-weight:500; }
+  .panel .ph .pc{ font-size:11.5px; color:var(--text-muted); }
+  .panel .pintu{ font-size:13.5px; color:var(--text-secondary); line-height:1.65; margin:11px 0; }
+  .lab{ font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); margin:12px 0 6px; }
+  .eqbox{ background:var(--surface-1); border:0.5px solid var(--border); border-radius:8px; padding:11px 13px; overflow-x:auto; }
+  .pwhen{ font-size:13px; color:var(--text-secondary); line-height:1.6; }
+  .pills{ display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
+  .pill{ font-size:11px; padding:2px 9px; border-radius:999px; border:0.5px solid var(--border); color:var(--text-secondary); }
+  .p-on{ background:var(--bg-success); color:var(--text-success); border-color:transparent; }
+  .p-off{ background:var(--bg-warning); color:var(--text-warning); border-color:transparent; }
+  .p-val{ background:var(--bg-accent); color:var(--text-accent); border-color:transparent; }
+  .p-pol{ background:var(--bg-pro); color:var(--text-pro); border-color:transparent; }
+  .legend{ display:flex; flex-wrap:wrap; gap:10px 14px; margin-top:10px; font-size:11.5px; color:var(--text-muted); }
+  .legend span{ display:inline-flex; align-items:center; gap:5px; }
+  .zoomwrap{ position:absolute; right:10px; bottom:10px; display:flex; flex-direction:column; gap:4px; }
+  .zoomwrap .b{ background:var(--surface-2); width:30px; height:30px; justify-content:center; padding:0; }
+  .hintbar{ position:absolute; left:10px; bottom:10px; font-size:11px; color:var(--text-muted); background:var(--surface-2); border:0.5px solid var(--border); border-radius:999px; padding:3px 10px; }
+
+  .grp{ font-size:12px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.06em; margin:18px 0 8px; display:flex; align-items:center; gap:7px; }
+  .grp .dotc{ width:9px; height:9px; }
+  .eq-item{ border-bottom:0.5px solid var(--border); padding:11px 0; }
+  .eqrow .rname{ font-size:13.5px; font-weight:500; display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
+  .tag{ font-size:11px; color:var(--text-muted); }
+  .eq-explain{ margin-left:auto; border:0.5px solid var(--border-strong); background:transparent; color:var(--text-secondary); border-radius:999px; padding:3px 11px; font-size:11.5px; cursor:pointer; display:inline-flex; align-items:center; gap:5px; }
+  .eq-explain:hover{ background:var(--surface-1); }
+  .eq-explain i{ font-size:14px; }
+  .eq-item.open .eq-explain{ background:var(--bg-accent); color:var(--text-accent); border-color:transparent; }
+  .eq-why{ display:none; margin-top:10px; padding:11px 14px; background:var(--surface-1); border:0.5px solid var(--border); border-radius:10px; }
+  .eq-item.open .eq-why{ display:block; }
+  .eq-why .ndetail-text{ font-size:13px; color:var(--text-secondary); line-height:1.62; }
+  .eq-why .ndetail-text p{ margin:0 0 9px; }
+  .eq-why .ndetail-text p:last-child{ margin-bottom:0; }
+  .eq-why .ndetail-text ul{ margin:4px 0 10px; padding-left:0; list-style:none; }
+  .eq-why .ndetail-text li{ margin:4px 0; padding-left:16px; position:relative; }
+  .eq-why .ndetail-text li:before{ content:"–"; position:absolute; left:2px; color:var(--text-muted); }
+  .eq-why .ndetail-text b{ font-weight:600; color:var(--text-primary); }
+  .eq-why .ndetail-text sub,.eq-why .ndetail-text sup{ font-size:0.72em; }
+  .nota-item{ border-bottom:0.5px solid var(--border); }
+  .nota-row{ display:grid; grid-template-columns:118px 1fr; gap:14px; padding:9px 4px; align-items:baseline; }
+  .nota-head{ cursor:pointer; }
+  .nota-head:hover{ background:rgba(99,102,180,0.06); }
+  .nota-item.open .nota-head{ background:rgba(99,102,180,0.06); }
+  .nota-sym{ font-size:15px; white-space:nowrap; }
+  .nota-name{ font-size:13.5px; display:flex; align-items:center; gap:6px; }
+  .nota-name .nchev{ font-size:14px; color:var(--text-muted); transition:transform .2s; margin-left:auto; }
+  .nota-item.open .nchev{ transform:rotate(90deg); }
+  .nota-mean{ font-size:12.5px; color:var(--text-muted); margin-top:2px; }
+  .nota-detail{ display:none; padding:2px 6px 14px 132px; }
+  .nota-item.open .nota-detail{ display:block; }
+  .ndetail-text{ font-size:13px; color:var(--text-secondary); line-height:1.62; }
+  .nused{ font-size:12.5px; color:var(--text-secondary); margin-top:9px; }
+  .nused .lab2{ text-transform:uppercase; letter-spacing:.05em; font-size:10.5px; color:var(--text-muted); margin-right:7px; }
+  @media (max-width:520px){ .nota-detail{ padding-left:6px; } }
+  .hint{ font-size:12px; color:var(--text-muted); margin-bottom:10px; }
+  .katex{ font-size:1.02em; }
+
+  .vmode{ display:inline-flex; background:var(--surface-1); border:0.5px solid var(--border); border-radius:999px; padding:3px; gap:3px; margin-bottom:8px; }
+  .vmode button{ border:none; background:transparent; color:var(--text-secondary); font:inherit; font-size:12.5px; padding:6px 14px; border-radius:999px; cursor:pointer; }
+  .vmode button.on{ background:var(--text-primary); color:var(--surface-2); }
+  .vcap{ font-size:12.5px; color:var(--text-muted); line-height:1.55; margin:0 0 10px; }
+  .filters{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 12px; }
+  .fb{ border:0.5px solid var(--border-strong); background:transparent; color:var(--text-secondary); border-radius:999px; padding:5px 12px; font-size:12px; cursor:pointer; }
+  .fb:hover{ background:var(--surface-1); }
+  .fb.on{ background:var(--text-primary); color:var(--surface-2); border-color:transparent; }
+  .vstage{ position:relative; width:100%; max-width:640px; margin:0 auto; aspect-ratio:640 / 520; }
+  .vstage svg{ position:absolute; inset:0; width:100%; height:100%; }
+  .chip{ position:absolute; transform:translate(-50%,-50%); display:inline-flex; align-items:center; gap:5px; background:var(--surface-2); border:0.5px solid var(--border); border-radius:999px; padding:3px 9px; font-size:11.5px; line-height:1.1; color:var(--text-primary); cursor:pointer; white-space:nowrap; transition:opacity .15s, box-shadow .15s; }
+  .chip:hover{ border-color:var(--border-strong); }
+  .chip.on{ border-color:var(--text-accent); box-shadow:0 0 0 1.5px var(--text-accent); }
+  .chip.dim{ opacity:0.16; }
+  .chip .cd{ width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+  .key{ max-width:640px; margin:12px auto 0; display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:8px; }
+  .ki{ font-size:12px; color:var(--text-secondary); display:flex; gap:7px; align-items:baseline; }
+  .ki b{ font-weight:500; }
+  .ki .sw{ width:11px; height:11px; border-radius:3px; flex-shrink:0; transform:translateY(1px); }
+  .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; }
+  .gw .cap{ font-size:12.5px; color:var(--text-muted); margin:0 0 12px; }
+  .gw .lab{ font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted); margin:14px 0 6px; }
+  .gw .row{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .gw .tbtn{ border:0.5px solid var(--border-strong); background:transparent; color:var(--text-secondary); border-radius:999px; padding:4px 11px; font-size:12px; cursor:pointer; display:inline-flex; align-items:center; gap:5px; }
+  .gw .tbtn:hover{ background:var(--surface-1); }
+  .gw .tbtn.on{ background:var(--text-primary); color:var(--surface-2); border-color:transparent; }
+  .gw .tbtn.sq{ width:34px; height:34px; justify-content:center; padding:0; border-radius:8px; font-size:15px; }
+  .gw .sliders{ display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; }
+  .gw .ctl{ background:var(--surface-1); border:0.5px solid var(--border); border-radius:10px; padding:10px 12px 12px; }
+  .gw .ctl .top{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+  .gw .ctl .nm{ font-size:11.5px; color:var(--text-secondary); }
+  .gw .ctl .val{ font-size:14px; font-weight:600; color:var(--text-primary); font-variant-numeric:tabular-nums; }
+  .gw input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:5px; border-radius:999px; background:var(--border-strong); outline:none; margin:0; cursor:pointer; }
+  .gw input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:16px; height:16px; border-radius:50%; background:var(--text-accent); border:2px solid var(--surface-2); box-shadow:0 1px 3px rgba(0,0,0,.28); }
+  .gw input[type=range]::-moz-range-thumb{ width:14px; height:14px; border-radius:50%; background:var(--text-accent); border:2px solid var(--surface-2); box-shadow:0 1px 3px rgba(0,0,0,.28); }
+  .gw input[type=range]::-moz-range-track{ height:5px; border-radius:999px; background:var(--border-strong); }
+  .gw .qpanel{ background:var(--surface-1); border:0.5px solid var(--border); border-radius:12px; padding:12px 15px; }
+  .gw .qhead{ font-size:12.5px; color:var(--text-secondary); margin-bottom:10px; font-variant-numeric:tabular-nums; }
+  .gw .qrow{ display:flex; align-items:center; gap:10px; padding:5px 0; }
+  .gw .qa{ flex:0 0 80px; font-size:12.5px; color:var(--text-secondary); }
+  .gw .qbar{ flex:1; height:11px; background:var(--surface-0); border-radius:999px; overflow:hidden; }
+  .gw .qfill{ height:100%; background:var(--text-accent); border-radius:999px; opacity:.38; transition:width .2s; }
+  .gw .qv{ flex:0 0 50px; text-align:right; font-size:13px; font-variant-numeric:tabular-nums; font-weight:500; }
+  .gw .qtag{ flex:0 0 48px; font-size:10px; color:var(--text-success); text-align:right; text-transform:uppercase; letter-spacing:.04em; }
+  .gw .qrow.best .qa{ color:var(--text-primary); font-weight:600; }
+  .gw .qrow.best .qfill{ background:var(--text-success); opacity:.7; }
+  .gw .qempty{ font-size:13px; color:var(--text-muted); }
+  .gw .gwstatus{ font-size:12px; margin-top:9px; min-height:16px; line-height:1.5; }
+  .gw .gwstatus.ok{ color:var(--text-success); }
+  .gw .gwstatus.warn{ color:var(--text-warning); }
+  .gw .gwmain{ display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap; margin-top:8px; }
+  .gw .gwleft{ flex:0 0 auto; }
+  .gw .gwside{ flex:1 1 250px; min-width:230px; }
+  .gw .gwside .drive{ justify-content:flex-start; }
+  .gw .boardwrap{ width:max-content; margin:0; background:var(--surface-1); border:0.5px solid var(--border); border-radius:14px; padding:12px; }
+  .gw .board{ position:relative; width:316px; }
+  .gw .grid{ display:grid; grid-template-columns:repeat(5,60px); grid-auto-rows:60px; gap:4px; }
+  .gw .cell{ position:relative; border-radius:9px; border:1px solid var(--border); background:var(--surface-2); cursor:pointer; color:#1f2430; overflow:hidden; }
+  .gw .cell.wall{ background:#3a4252; border-color:#2b313f; cursor:default; }
+  .gw .cell.term{ border-width:2px; }
+  .gw .cv{ position:absolute; top:3px; left:5px; font-size:10px; color:#475569; font-variant-numeric:tabular-nums; }
+  .gw .crew{ position:absolute; top:3px; right:5px; font-size:10px; font-weight:700; }
+  .gw .cicon{ position:absolute; top:3px; left:5px; font-size:13px; line-height:1; }
+  .gw .ca{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:23px; color:rgba(31,36,48,0.4); }
+  .gw .cterm{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .gw .cterm .rw{ font-size:16px; font-weight:700; line-height:1.1; }
+  .gw .cterm .tg{ font-size:8px; text-transform:uppercase; letter-spacing:.06em; opacity:.85; }
+  .gw .cs{ position:absolute; bottom:3px; left:5px; font-size:10px; font-weight:700; color:var(--text-accent); }
+  .gw .agent{ position:absolute; left:50%; top:50%; width:26px; height:26px; margin:-13px 0 0 -13px; border-radius:50%; background:var(--text-primary); color:var(--surface-2); display:flex; align-items:center; justify-content:center; font-size:13px; z-index:3; box-shadow:0 1px 5px rgba(0,0,0,.35); }
+  .gw .vdot{ position:absolute; bottom:4px; right:5px; width:6px; height:6px; border-radius:50%; background:var(--text-accent); opacity:.5; }
+  .gw .board svg{ position:absolute; inset:0; pointer-events:none; z-index:2; }
+  .gw .drive{ display:grid; grid-template-columns:repeat(3,34px); grid-template-rows:repeat(2,34px); gap:4px; justify-content:center; }
+  .gw .drive .sp{ visibility:hidden; }
+  .gw .stepper{ display:flex; align-items:stretch; overflow-x:auto; padding:8px 10px 6px; background:var(--surface-1); border:0.5px solid var(--border); border-radius:10px; }
+  .gw .snode{ flex:0 0 auto; min-width:58px; display:flex; flex-direction:column; align-items:center; }
+  .gw .snode[data-i]{ cursor:pointer; }
+  .gw .snode .stop{ height:30px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; line-height:1.05; padding-bottom:3px; }
+  .gw .stop .aarr{ font-size:14px; color:var(--text-secondary); }
+  .gw .stop .ar{ font-size:9.5px; color:var(--text-muted); font-variant-numeric:tabular-nums; }
+  .gw .snode .scirc{ position:relative; width:100%; height:26px; display:flex; align-items:center; justify-content:center; }
+  .gw .snode .scirc::before,.gw .snode .scirc::after{ content:''; position:absolute; top:50%; height:2px; width:50%; background:var(--border-strong); transform:translateY(-50%); }
+  .gw .snode .scirc::before{ right:50%; }
+  .gw .snode .scirc::after{ left:50%; }
+  .gw .snode:first-child .scirc::before{ display:none; }
+  .gw .snode:last-child .scirc::after{ display:none; }
+  .gw .dotS{ position:relative; z-index:1; width:18px; height:18px; border-radius:50%; background:var(--surface-2); border:2px solid var(--border-strong); }
+  .gw .dotS.cur{ background:var(--text-accent); border-color:var(--text-accent); box-shadow:0 0 0 3px var(--bg-accent); }
+  .gw .dotA{ position:relative; z-index:1; width:12px; height:12px; border-radius:50%; background:var(--text-primary); }
+  .gw .snode .sbot{ height:22px; font-size:10.5px; color:var(--text-muted); display:flex; align-items:flex-start; justify-content:center; padding-top:4px; font-variant-numeric:tabular-nums; }
+  .gw .snode.cur .sbot{ color:var(--text-accent); font-weight:600; }
+  .gw .rollout{ border:0.5px solid var(--border); border-radius:10px; background:var(--surface-2); margin-bottom:8px; }
+  .gw .rollout.active{ border-color:var(--text-accent); box-shadow:0 0 0 1px var(--text-accent); }
+  .gw .rhead{ display:flex; align-items:center; gap:9px; cursor:pointer; padding:7px 10px 3px; }
+  .gw .rname{ font-size:11.5px; font-weight:600; color:var(--text-secondary); }
+  .gw .rollout.active .rname{ color:var(--text-accent); }
+  .gw .rret{ font-size:11.5px; color:var(--text-primary); font-variant-numeric:tabular-nums; background:var(--surface-1); border:0.5px solid var(--border); border-radius:999px; padding:1px 10px; }
+  .gw .rsp{ flex:1; }
+  .gw .ricon{ border:none; background:transparent; color:var(--text-muted); cursor:pointer; font-size:17px; line-height:1; padding:0 5px; border-radius:6px; }
+  .gw .ricon:hover{ background:var(--surface-1); color:var(--text-danger); }
+  .gw .rollout .stepper{ border:none; background:transparent; padding:0 8px 4px; border-radius:0; }
+  .gw .sar{ display:grid; grid-template-columns:repeat(auto-fit,minmax(108px,1fr)); gap:8px; }
+  .gw .sar .c{ background:var(--surface-1); border-radius:8px; padding:8px 10px; }
+  .gw .sar .k{ font-size:11px; color:var(--text-muted); }
+  .gw .sar .v{ font-size:17px; font-weight:500; margin-top:2px; font-variant-numeric:tabular-nums; }
+  .gw .tblwrap{ max-height:240px; overflow:auto; border:0.5px solid var(--border); border-radius:10px; }
+  .gw table.vq{ width:100%; border-collapse:collapse; font-size:12px; }
+  .gw table.vq th{ position:sticky; top:0; background:var(--surface-1); color:var(--text-muted); font-weight:500; text-align:right; padding:6px 9px; font-size:11px; }
+  .gw table.vq th:first-child{ text-align:left; }
+  .gw table.vq td{ text-align:right; padding:5px 9px; border-top:0.5px solid var(--border); font-variant-numeric:tabular-nums; }
+  .gw table.vq td:first-child{ text-align:left; }
+  .gw table.vq tr.cur td{ background:var(--bg-accent); }
+  .gw table.vq td.gq{ color:var(--text-success); font-weight:600; }
+  .gw .legend{ display:flex; flex-wrap:wrap; gap:10px; font-size:11.5px; color:var(--text-muted); margin-top:8px; }
+  .gw .legend span{ display:inline-flex; align-items:center; gap:5px; }
+  .gw .sw{ width:12px; height:12px; border-radius:3px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h2 class="sr-only">Reinforcement learning explorer: an infinite-canvas taxonomy, equation and notation references, and a dual-lens Venn diagram.</h2>
+
+<div class="head">
+  <h1>Reinforcement learning explorer</h1>
+  <p>One map, four views. Same notation everywhere.</p>
+</div>
+
+<div class="maintabs" id="maintabs">
+  <button data-t="canvas" class="on"><i class="ti ti-sitemap" aria-hidden="true"></i>Canvas tree</button>
+  <button data-t="eq"><i class="ti ti-math-function" aria-hidden="true"></i>Equations</button>
+  <button data-t="nota"><i class="ti ti-vocabulary" aria-hidden="true"></i>Notation</button>
+  <button data-t="venn"><i class="ti ti-circles" aria-hidden="true"></i>Venn</button>
+  <button data-t="grid"><i class="ti ti-layout-grid" aria-hidden="true"></i>Gridworld</button>
+</div>
+
+<div class="tabview on" id="tab-canvas">
+  <div class="bar">
+    <input type="search" id="q" placeholder="Search: off-policy, bellman, entropy, replay, MCTS, offline">
+    <button class="b" id="expandAll"><i class="ti ti-arrows-maximize" aria-hidden="true"></i>Expand all</button>
+    <button class="b" id="collapseAll"><i class="ti ti-arrows-minimize" aria-hidden="true"></i>Collapse</button>
+    <button class="b" id="fit"><i class="ti ti-focus-centered" aria-hidden="true"></i>Fit</button>
+  </div>
+  <div class="stage" id="stage">
+    <div class="world" id="world"></div>
+    <div class="zoomwrap">
+      <button class="b" id="zin" aria-label="Zoom in"><i class="ti ti-plus" aria-hidden="true"></i></button>
+      <button class="b" id="zout" aria-label="Zoom out"><i class="ti ti-minus" aria-hidden="true"></i></button>
+    </div>
+    <div class="hintbar">drag &middot; scroll &middot; click</div>
+  </div>
+  <div class="panel" id="panel"></div>
+  <div class="legend" id="legend"></div>
+</div>
+
+<div class="tabview" id="tab-eq"></div>
+<div class="tabview" id="tab-nota"></div>
+
+<div class="tabview" id="tab-venn">
+  <div class="vmode" id="vmode">
+    <button data-m="learn" class="on">What it learns</button>
+    <button data-m="backup">How it backs up</button>
+  </div>
+  <p class="vcap" id="vcap"></p>
+  <div class="filters" id="vfilters"></div>
+  <div class="vstage" id="vstage">
+    <svg id="vsvg" viewBox="0 0 640 520" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
+    <div id="vchips"></div>
+  </div>
+  <div class="panel" id="vpanel"></div>
+  <div class="key" id="vkey"></div>
+</div>
+
+<div class="tabview" id="tab-grid">
+<div class="gw">
+  <p class="cap">Edit the world, watch value iteration solve it, then drive the agent and read the trajectory.</p>
+  <div class="lab">Tool — click a cell to place</div>
+  <div class="row" id="gwTools"></div>
+  <div class="lab">Environment</div>
+  <div class="sliders" id="gwSliders"></div>
+  <div class="gwmain">
+    <div class="gwleft">
+      <div class="boardwrap">
+        <div class="board" id="gwBoard">
+          <div class="grid" id="gwGrid"></div>
+          <svg id="gwPath" width="316" height="316" viewBox="0 0 316 316"></svg>
+        </div>
+      </div>
+      <div class="legend" id="gwLegend"></div>
+    </div>
+    <div class="gwside">
+      <div class="lab" style="margin-top:0">Move the agent</div>
+      <div class="drive" id="gwDrive"></div>
+      <div class="row" id="gwPlayback" style="gap:6px; margin-top:10px;"></div>
+      <div class="gwstatus" id="gwStatus"></div>
+      <div class="lab">Current step</div>
+      <div class="sar" id="gwSar"></div>
+    </div>
+  </div>
+  <div class="lab">Rollouts — state &middot; action &middot; reward, each with its return G<sub>0</sub></div>
+  <div id="gwTraj"></div>
+  <div class="lab">Action values — Q(s,a) at the current state</div>
+  <div id="gwQ" class="qpanel"></div>
+  <button class="tbtn" id="gwTblToggle" style="margin-top:10px"><i class="ti ti-table" aria-hidden="true"></i>Show full V / Q table</button>
+  <div class="tblwrap" id="gwTblWrap" style="display:none; margin-top:8px"><table class="vq" id="gwVqtable"></table></div>
+</div>
+</div>
+
+</div>
+
+<script>
+var cats = {
+  root: { label:"Reinforcement learning", dot:"#5F5E5A" },
+  mb:   { label:"Model-based",  dot:"#534AB7" },
+  mf:   { label:"Model-free",   dot:"#0F6E56" },
+  dp:   { label:"Dynamic programming", dot:"#BA7517" },
+  mc:   { label:"Monte Carlo",  dot:"#D4537E" },
+  td:   { label:"Temporal difference", dot:"#378ADD" },
+  dqn:  { label:"Deep value (DQN)", dot:"#D85A30" },
+  pg:   { label:"Policy gradient", dot:"#639922" },
+  ofl:  { label:"Offline / batch RL", dot:"#6B7280" }
+};
+var KMACROS = { "\\argmax":"\\operatorname*{arg\\,max}", "\\E":"\\mathbb{E}" };
+
+/* ================= CANVAS TREE ================= */
+(function(){
+  var P = {
+    on:'<span class="pill p-on">on-policy</span>', off:'<span class="pill p-off">off-policy</span>',
+    val:'<span class="pill p-val">value-based</span>', pol:'<span class="pill p-pol">policy-based</span>',
+    ac:'<span class="pill">actor-critic</span>', mf:'<span class="pill">model-free</span>', mb:'<span class="pill">model-based</span>',
+    deep:'<span class="pill">deep</span>', det:'<span class="pill">deterministic</span>', cont:'<span class="pill">continuous</span>',
+    plan:'<span class="pill">planning</span>', offline:'<span class="pill">offline</span>', dist:'<span class="pill">distributional</span>'
+  };
+
+  var data = {
+    cat:"root", title:"Reinforcement learning", open:true,
+    intu:"An agent in state s takes action a, receives reward r, moves to s', and learns a policy π that maximises expected discounted return G<sub>t</sub>. Every branch answers two questions: do we have a model of the world, and do we learn values, a policy, or both?",
+    tex:"G_t = \\sum_{k=0}^{\\infty} \\gamma^k r_{t+k+1}, \\qquad \\pi^\\ast = \\argmax_\\pi \\; \\E_\\pi[\\,G_0\\,]",
+    when:"The root of every method here.", pills:[],
+    children:[
+      { cat:"mb", title:"Model-based RL", open:true,
+        intu:"The agent has, or learns, a model of the environment — dynamics P(s'|s,a) and rewards R(s,a) — and plans with it. Far more sample-efficient, but a wrong model misleads planning.",
+        tex:"V(s) = \\max_a\\Big[\\, R(s,a) + \\gamma \\sum_{s'} P(s'\\!\\mid\\! s,a)\\,V(s') \\,\\Big]",
+        when:"When you can simulate or learn the dynamics cheaply.", pills:[P.mb],
+        children:[
+          { cat:"dp", title:"Dynamic programming",
+            intu:"Assumes a fully known model. Computes exact values by sweeping all states with the Bellman equations. No sampling — the bedrock of RL theory.",
+            tex:"V_\\pi(s) = \\sum_a \\pi(a\\!\\mid\\! s)\\Big[\\, R(s,a) + \\gamma \\sum_{s'} P(s'\\!\\mid\\! s,a)\\,V_\\pi(s') \\,\\Big]",
+            when:"Small, fully known MDPs; teaching the core theory.", pills:[P.mb,P.plan],
+            children:[
+              { cat:"dp", title:"Policy evaluation", leaf:true,
+                intu:"Repeatedly apply the Bellman expectation backup to compute V<sub>π</sub> for a fixed policy until values converge.",
+                tex:"V_{k+1}(s) \\leftarrow \\sum_a \\pi(a\\!\\mid\\! s)\\Big[\\, R(s,a) + \\gamma \\sum_{s'} P(s'\\!\\mid\\! s,a)\\,V_k(s') \\,\\Big]",
+                when:"The inner loop of policy iteration.", pills:[P.mb,P.pol] },
+              { cat:"dp", title:"Policy iteration", leaf:true,
+                intu:"Alternate full evaluation with greedy improvement. Converges to π* in finitely many steps.",
+                tex:"\\pi'(s) = \\argmax_a \\Big[\\, R(s,a) + \\gamma \\sum_{s'} P(s'\\!\\mid\\! s,a)\\,V_\\pi(s') \\,\\Big]",
+                when:"When evaluation is cheap.", pills:[P.mb,P.pol] },
+              { cat:"dp", title:"Value iteration", leaf:true,
+                intu:"Collapse evaluation and improvement into one Bellman-optimality backup per sweep.",
+                tex:"V_{k+1}(s) \\leftarrow \\max_a \\Big[\\, R(s,a) + \\gamma \\sum_{s'} P(s'\\!\\mid\\! s,a)\\,V_k(s') \\,\\Big]",
+                when:"When you want optimal values directly.", pills:[P.mb,P.val] }
+            ] },
+          { cat:"mb", title:"Learn-the-model",
+            intu:"The model is unknown, so estimate P̂ and R̂ from experience, then plan — often generating imagined rollouts to train a model-free learner.",
+            tex:"\\hat{P}, \\hat{R} \\;\\leftarrow\\; \\text{data}; \\qquad \\hat{s}_{t+1} \\sim p_\\phi(\\cdot \\mid s_t, a_t)",
+            when:"When real interaction is expensive but a model is learnable.", pills:[P.mb],
+            children:[
+              { cat:"mb", title:"Dyna-Q", leaf:true,
+                intu:"Learn a model from real steps, then run extra Q-learning updates on simulated transitions. The classic model-based / model-free bridge.",
+                tex:"Q(s,a) \\leftarrow Q(s,a) + \\alpha\\big[\\, r + \\gamma \\max_{a'} Q(s',a') - Q(s,a) \\,\\big] \\;\\; (\\text{real} + n\\text{ simulated})",
+                when:"Tabular problems where planning sweeps are cheap.", pills:[P.mb,P.off,P.val] },
+              { cat:"mb", title:"World Models", leaf:true,
+                intu:"Train a generative latent dynamics model, then train the policy almost entirely inside the model's 'dream'.",
+                tex:"\\hat{s}_{t+1} \\sim p_\\phi(\\hat{s}_{t+1} \\mid \\hat{s}_t, a_t), \\qquad \\text{train } \\pi \\text{ in latent rollouts}",
+                when:"Pixels with costly real steps.", pills:[P.mb,P.deep] },
+              { cat:"mb", title:"Dreamer", leaf:true,
+                intu:"Learns a recurrent latent world model and optimises an actor-critic purely on imagined latent trajectories. Strong on continuous control from pixels.",
+                tex:"\\max_\\theta \\; \\E_{p_\\phi}\\Big[\\textstyle\\sum_t \\gamma^t r_t\\Big] \\;\\text{(imagined rollouts)}",
+                when:"Sample-efficient pixel-based control.", pills:[P.mb,P.deep,P.ac] },
+              { cat:"mb", title:"MBPO", leaf:true,
+                intu:"Model-based policy optimisation: train short model rollouts branched off real states, feed them to an off-policy learner (SAC). Limits compounding model error.",
+                tex:"\\text{short } k\\text{-step rollouts from } \\hat{P}, \\;\\text{then SAC updates}",
+                when:"Sample-efficient continuous control.", pills:[P.mb,P.deep,P.ac] },
+              { cat:"mb", title:"MuZero", leaf:true,
+                intu:"Learns a latent model predicting only reward, value, and policy — no observation reconstruction. Plans with MCTS over the learned model.",
+                tex:"s^0 = h(o),\\;\\; s^{k} = g(s^{k-1}, a^k),\\;\\; (p, v) = f(s^{k})",
+                when:"Atari and board games without given rules.", pills:[P.mb,P.deep,P.plan] }
+            ] },
+          { cat:"mb", title:"Decision-time planning",
+            intu:"Rather than store a global policy, search forward from the current state at decision time, then act. Powerful with a learned value/policy network.",
+            tex:"a_t = \\text{search}(s_t;\\, \\text{model}) \\quad \\text{then re-plan at } s_{t+1}",
+            when:"Large state spaces with a good simulator.", pills:[P.mb,P.plan],
+            children:[
+              { cat:"mb", title:"MCTS", leaf:true,
+                intu:"Monte Carlo tree search expands a tree by rollouts, balancing exploration and exploitation via UCT, then picks the best action.",
+                tex:"a^\\ast = \\argmax_a \\Big[\\, Q(s,a) + c\\sqrt{\\tfrac{\\ln N(s)}{N(s,a)}} \\,\\Big]",
+                when:"Turn-based games, combinatorial search.", pills:[P.mb,P.plan] },
+              { cat:"mb", title:"AlphaZero", leaf:true,
+                intu:"MCTS guided by a network predicting a policy prior and a value, trained by self-play. Search improves the net; the net sharpens search.",
+                tex:"\\ell = (z - v)^2 - \\pi^\\top \\log p + c\\lVert\\theta\\rVert^2",
+                when:"Perfect-information games (Go, chess).", pills:[P.mb,P.deep,P.plan] }
+            ] }
+        ] },
+      { cat:"mf", title:"Model-free RL", open:true,
+        intu:"No model of P or R. The agent learns directly from sampled experience (s, a, r, s') by trial and error. Simpler and general, but needs many interactions.",
+        tex:"\\text{learn from samples } (s_t, a_t, r_t, s_{t+1}) \\;\\; \\text{— no } P, R",
+        when:"The default when the environment is a black box.", pills:[P.mf],
+        children:[
+          { cat:"td", title:"Value-based", open:true,
+            intu:"Learn a value function (V or Q) and act greedily to get the policy implicitly. No explicit policy parameters; great for discrete actions.",
+            tex:"\\pi(s) = \\argmax_a Q(s,a)",
+            when:"Discrete action spaces.", pills:[P.mf,P.val],
+            children:[
+              { cat:"mc", title:"Monte Carlo",
+                intu:"Wait until the episode ends, then update toward the actual return G<sub>t</sub>. Unbiased, high variance, needs terminating episodes.",
+                tex:"V(s_t) \\leftarrow V(s_t) + \\alpha\\big[\\, G_t - V(s_t) \\,\\big]",
+                when:"Episodic tasks.", pills:[P.mf],
+                children:[
+                  { cat:"mc", title:"MC prediction", leaf:true,
+                    intu:"Estimate V<sub>π</sub> by averaging returns observed after each visit to a state.",
+                    tex:"V(s) = \\tfrac{1}{N(s)} \\sum_{i=1}^{N(s)} G^{(i)}",
+                    when:"Evaluating a fixed policy.", pills:[P.mf,P.val] },
+                  { cat:"mc", title:"MC control · on-policy (GLIE)", leaf:true,
+                    intu:"Run ε-greedy episodes, update Q from returns, anneal ε toward zero.",
+                    tex:"Q(s_t,a_t) \\leftarrow Q(s_t,a_t) + \\alpha\\big[\\, G_t - Q(s_t,a_t) \\,\\big]",
+                    when:"Episodic control without bootstrapping.", pills:[P.on,P.mf,P.val] },
+                  { cat:"mc", title:"MC off-policy · importance sampling", leaf:true,
+                    intu:"Collect with behavior b, evaluate target π by reweighting returns with the ratio ρ<sub>t</sub>.",
+                    tex:"\\rho_t = \\prod_{k=t}^{T} \\frac{\\pi(a_k\\!\\mid\\! s_k)}{b(a_k\\!\\mid\\! s_k)}, \\qquad V(s_t) \\mathrel{+}= \\alpha[\\rho_t G_t - V(s_t)]",
+                    when:"Reusing another policy's episodes.", pills:[P.off,P.mf] }
+                ] },
+              { cat:"td", title:"Temporal difference",
+                intu:"Update every step by bootstrapping: use r + γV(s') as a return proxy. Blends MC sampling with DP bootstrapping — lower variance, slight bias, online.",
+                tex:"\\delta_t = r_{t+1} + \\gamma V(s_{t+1}) - V(s_t), \\qquad V(s_t) \\mathrel{+}= \\alpha\\,\\delta_t",
+                when:"Continuing or long tasks; online learning.", pills:[P.mf],
+                children:[
+                  { cat:"td", title:"TD(0)", leaf:true,
+                    intu:"Update V(s) one step ahead using the current next-state estimate.",
+                    tex:"V(s_t) \\leftarrow V(s_t) + \\alpha\\big[\\, r_{t+1} + \\gamma V(s_{t+1}) - V(s_t) \\,\\big]",
+                    when:"Single-step prediction.", pills:[P.mf,P.val] },
+                  { cat:"td", title:"n-step TD", leaf:true,
+                    intu:"Bootstrap after n steps — a dial between TD(0) and Monte Carlo trading bias for variance.",
+                    tex:"G_t^{(n)} = r_{t+1} + \\gamma r_{t+2} + \\cdots + \\gamma^{n-1} r_{t+n} + \\gamma^n V(s_{t+n})",
+                    when:"When 1-step is too biased and MC too noisy.", pills:[P.mf,P.val] },
+                  { cat:"td", title:"TD(λ) · eligibility traces", leaf:true,
+                    intu:"Average all n-step returns with weight λ via eligibility traces giving recent states more credit.",
+                    tex:"e_t(s) = \\gamma\\lambda\\,e_{t-1}(s) + \\mathbf{1}[s{=}s_t], \\qquad V(s) \\mathrel{+}= \\alpha\\,\\delta_t\\,e_t(s)",
+                    when:"Smooth bias/variance control.", pills:[P.mf,P.val] },
+                  { cat:"td", title:"SARSA · on-policy", leaf:true,
+                    intu:"Updates Q with the action a' the policy actually takes next — tuple (S,A,R,S',A'). Behaves cautiously near risk.",
+                    tex:"Q(s_t,a_t) \\mathrel{+}= \\alpha\\big[\\, r_{t+1} + \\gamma Q(s_{t+1},a_{t+1}) - Q(s_t,a_t) \\,\\big]",
+                    when:"Safe, policy-consistent behavior.", pills:[P.on,P.mf,P.val] },
+                  { cat:"td", title:"Expected SARSA", leaf:true,
+                    intu:"Replace the sampled next action with the expectation over the policy — lower variance, same on-policy target.",
+                    tex:"Q(s_t,a_t) \\mathrel{+}= \\alpha\\big[\\, r_{t+1} + \\gamma \\textstyle\\sum_{a'} \\pi(a'\\!\\mid\\! s')Q(s',a') - Q(s_t,a_t) \\,\\big]",
+                    when:"SARSA with less noise.", pills:[P.on,P.mf,P.val] },
+                  { cat:"td", title:"Q-learning · off-policy", leaf:true,
+                    intu:"Learns Q* using the greedy max over next actions, independent of how data is gathered.",
+                    tex:"Q(s_t,a_t) \\mathrel{+}= \\alpha\\big[\\, r_{t+1} + \\gamma \\max_{a'} Q(s_{t+1},a') - Q(s_t,a_t) \\,\\big]",
+                    when:"Optimal policy from any data.", pills:[P.off,P.mf,P.val] },
+                  { cat:"td", title:"Double Q-learning", leaf:true,
+                    intu:"Two Q-functions decouple action selection from evaluation to cut the max overestimation bias.",
+                    tex:"a^\\ast = \\argmax_{a'} Q_A(s',a'), \\qquad Q_A \\mathrel{+}= \\alpha[\\, r + \\gamma Q_B(s',a^\\ast) - Q_A \\,]",
+                    when:"When max-bias hurts.", pills:[P.off,P.mf,P.val] }
+                ] },
+              { cat:"dqn", title:"Deep value · DQN family",
+                intu:"Scale Q-learning to high-dimensional inputs with a neural net, a replay buffer for decorrelated samples, and a slow target network for stability.",
+                tex:"L(\\theta) = \\E\\big[(\\, r + \\gamma \\max_{a'} Q_{\\theta^-}(s',a') - Q_\\theta(s,a) \\,)^2\\big]",
+                when:"Discrete actions from pixels.", pills:[P.off,P.mf,P.val,P.deep],
+                children:[
+                  { cat:"dqn", title:"DQN", leaf:true,
+                    intu:"Replay buffer + target network make neural Q-learning stable. The Atari breakthrough.",
+                    tex:"y = r + \\gamma \\max_{a'} Q_{\\theta^-}(s',a')",
+                    when:"Baseline deep value method.", pills:[P.off,P.mf,P.deep] },
+                  { cat:"dqn", title:"Double DQN", leaf:true,
+                    intu:"Double-Q trick on DQN: select with the online net, evaluate with the target net.",
+                    tex:"y = r + \\gamma Q_{\\theta^-}\\big(s', \\argmax_{a'} Q_\\theta(s',a')\\big)",
+                    when:"When DQN overestimates.", pills:[P.off,P.mf,P.deep] },
+                  { cat:"dqn", title:"Dueling DQN", leaf:true,
+                    intu:"Split into value and advantage streams, then recombine — learns state value independent of action.",
+                    tex:"Q(s,a) = V(s) + A(s,a) - \\tfrac{1}{|\\mathcal{A}|}\\textstyle\\sum_{a'} A(s,a')",
+                    when:"Many similar-value actions.", pills:[P.off,P.mf,P.deep] },
+                  { cat:"dqn", title:"Prioritized replay", leaf:true,
+                    intu:"Sample high-TD-error transitions more often — learn from surprises, corrected by importance weights.",
+                    tex:"P(i) = \\frac{p_i^{\\,\\alpha}}{\\sum_k p_k^{\\,\\alpha}}, \\qquad p_i \\propto |\\delta_i|",
+                    when:"When some transitions are far more informative.", pills:[P.off,P.mf,P.deep] },
+                  { cat:"dqn", title:"Distributional · C51 / QR-DQN / IQN", leaf:true,
+                    intu:"Learn the full distribution of returns Z(s,a), not just its mean. Richer signal, better stability.",
+                    tex:"\\mathcal{T}Z(s,a) \\;\\overset{D}{=}\\; r + \\gamma\\, Z\\big(s', \\argmax_{a'} \\E[Z(s',a')]\\big)",
+                    when:"When return distribution matters.", pills:[P.off,P.mf,P.deep,P.dist] },
+                  { cat:"dqn", title:"Noisy Nets", leaf:true,
+                    intu:"Add learnable parametric noise to weights for state-dependent exploration, replacing ε-greedy.",
+                    tex:"w = \\mu + \\sigma \\odot \\epsilon, \\qquad \\epsilon \\sim \\mathcal{N}(0, I)",
+                    when:"Better deep exploration.", pills:[P.off,P.mf,P.deep] },
+                  { cat:"dqn", title:"Rainbow", leaf:true,
+                    intu:"Combine the strongest DQN improvements: double, dueling, prioritized replay, multi-step, distributional, and noisy nets.",
+                    tex:"\\text{Rainbow} = \\text{DQN} + \\text{Double} + \\text{Dueling} + \\text{PER} + n\\text{-step} + \\text{C51} + \\text{Noisy}",
+                    when:"Strongest discrete-action value agent.", pills:[P.off,P.mf,P.deep] }
+                ] }
+            ] },
+          { cat:"pg", title:"Policy-based", open:true,
+            intu:"Parameterise π<sub>θ</sub> directly and do gradient ascent on expected return. No argmax — natural for continuous and stochastic actions, but high variance.",
+            tex:"\\nabla_\\theta J(\\theta) = \\E_\\pi\\big[\\, \\nabla_\\theta \\log \\pi_\\theta(a_t\\!\\mid\\! s_t)\\;\\Psi_t \\,\\big]",
+            when:"Continuous or stochastic actions.", pills:[P.mf,P.pol],
+            children:[
+              { cat:"pg", title:"REINFORCE", leaf:true,
+                intu:"The original policy gradient: weight the log-prob gradient by the full-episode return. Simple, very high variance.",
+                tex:"\\theta \\leftarrow \\theta + \\alpha\\,\\nabla_\\theta \\log \\pi_\\theta(a_t\\!\\mid\\! s_t)\\,G_t",
+                when:"Teaching the core idea.", pills:[P.on,P.mf,P.pol] },
+              { cat:"pg", title:"REINFORCE + baseline", leaf:true,
+                intu:"Subtract a baseline b(s) ≈ V(s) to slash variance without bias. The first step toward actor-critic.",
+                tex:"\\theta \\leftarrow \\theta + \\alpha\\,\\nabla_\\theta \\log \\pi_\\theta(a_t\\!\\mid\\! s_t)\\,(G_t - b(s_t))",
+                when:"When plain REINFORCE is too noisy.", pills:[P.on,P.mf,P.pol] }
+            ] },
+          { cat:"pg", title:"Actor-critic", open:true,
+            intu:"Learn both an actor (policy π<sub>θ</sub>) and a critic (value). The critic supplies a low-variance signal — the TD error or advantage — to the actor.",
+            tex:"\\delta_t = r_{t+1} + \\gamma V_w(s_{t+1}) - V_w(s_t), \\qquad \\theta \\mathrel{+}= \\alpha_\\theta\\,\\delta_t\\,\\nabla_\\theta \\log \\pi_\\theta",
+            when:"Most modern deep-RL control.", pills:[P.mf,P.ac],
+            children:[
+              { cat:"pg", title:"A2C / A3C", leaf:true,
+                intu:"Advantage actor-critic: the advantage replaces the noisy return. A3C runs parallel actors asynchronously; A2C synchronously.",
+                tex:"\\nabla_\\theta J = \\E\\big[\\, \\nabla_\\theta \\log \\pi_\\theta(a_t\\!\\mid\\! s_t)\\,\\hat{A}_t \\,\\big], \\quad \\hat{A}_t = \\delta_t",
+                when:"General on-policy control.", pills:[P.on,P.mf,P.ac] },
+              { cat:"pg", title:"GAE", leaf:true,
+                intu:"Generalised advantage estimation: an exponentially-weighted average of n-step advantages, the standard advantage for PPO/TRPO.",
+                tex:"\\hat{A}_t^{\\text{GAE}} = \\sum_{l\\ge 0} (\\gamma\\lambda)^l\\,\\delta_{t+l}",
+                when:"Low-variance advantage for PG methods.", pills:[P.on,P.mf,P.ac] },
+              { cat:"pg", title:"TRPO", leaf:true,
+                intu:"Trust-region policy optimisation: the largest improving step within a KL trust region of the old policy. Stable but second-order.",
+                tex:"\\max_\\theta \\E_t\\big[\\tfrac{\\pi_\\theta}{\\pi_{\\text{old}}}\\hat{A}_t\\big] \\;\\; \\text{s.t.} \\;\\; \\E_t[\\mathrm{KL}(\\pi_{\\text{old}} \\Vert \\pi_\\theta)] \\le \\delta",
+                when:"Monotonic, stable improvement.", pills:[P.on,P.mf,P.ac] },
+              { cat:"pg", title:"PPO", leaf:true,
+                intu:"Clip the probability ratio so updates stay small. Simple, robust — the workhorse of modern RL and RLHF.",
+                tex:"L^{\\text{CLIP}} = \\E_t\\big[\\min(\\, r_t\\hat{A}_t,\\; \\mathrm{clip}(r_t,1{-}\\varepsilon,1{+}\\varepsilon)\\hat{A}_t \\,)\\big]",
+                when:"Default for continuous control and RLHF.", pills:[P.on,P.mf,P.ac] },
+              { cat:"pg", title:"GRPO", leaf:true,
+                intu:"Group relative policy optimisation (DeepSeek-R1). Normalise rewards within a sampled group as the advantage — no critic network.",
+                tex:"\\hat{A}_i = \\frac{r_i - \\mathrm{mean}(r_{1:G})}{\\mathrm{std}(r_{1:G})}, \\quad L = \\E[\\textstyle\\sum_i \\min(\\cdot) - \\beta\\,\\mathrm{KL}(\\pi_\\theta\\Vert\\pi_{\\text{ref}})]",
+                when:"LLM reasoning fine-tuning.", pills:[P.on,P.mf,P.ac] },
+              { cat:"pg", title:"IMPALA", leaf:true,
+                intu:"Distributed actor-learner architecture with V-trace off-policy correction for the lag between actors and the learner.",
+                tex:"v_s = V(s) + \\textstyle\\sum_t \\gamma^{t}\\big(\\prod_k c_k\\big)\\,\\rho_t\\,\\delta_t",
+                when:"Large-scale distributed training.", pills:[P.off,P.mf,P.ac] },
+              { cat:"pg", title:"DDPG · off-policy", leaf:true,
+                intu:"Deep deterministic policy gradient: off-policy actor-critic for continuous actions with a deterministic actor and replay.",
+                tex:"\\nabla_\\theta J = \\E\\big[\\, \\nabla_a Q(s,a)\\big|_{a=\\mu_\\theta(s)} \\,\\nabla_\\theta \\mu_\\theta(s) \\,\\big]",
+                when:"Continuous control, off-policy.", pills:[P.off,P.mf,P.ac,P.det,P.cont] },
+              { cat:"pg", title:"TD3 · off-policy", leaf:true,
+                intu:"Twin-delayed DDPG: twin critics (take the min), delayed actor updates, target-policy smoothing fix DDPG's overestimation.",
+                tex:"y = r + \\gamma \\min_{i=1,2} Q_{\\theta_i^-}\\big(s', \\mu(s') + \\epsilon\\big)",
+                when:"A more stable DDPG.", pills:[P.off,P.mf,P.ac,P.det,P.cont] },
+              { cat:"pg", title:"SAC · off-policy", leaf:true,
+                intu:"Soft actor-critic: maximise reward plus entropy H(π) with twin Q-nets. State of the art for continuous control.",
+                tex:"J(\\pi) = \\sum_t \\E\\big[\\, r(s_t,a_t) + \\alpha\\,\\mathcal{H}(\\pi(\\cdot\\!\\mid\\! s_t)) \\,\\big]",
+                when:"Robust, sample-efficient continuous control.", pills:[P.off,P.mf,P.ac,P.cont] }
+            ] },
+          { cat:"ofl", title:"Offline / batch RL", open:false,
+            intu:"Learn entirely from a fixed dataset D with no further interaction. The core challenge is distribution shift — values for actions absent from the data are unreliable.",
+            tex:"\\text{learn } \\pi \\text{ from fixed } \\mathcal{D} = \\{(s,a,r,s')\\}, \\;\\; \\text{no new rollouts}",
+            when:"When online interaction is unsafe or expensive (healthcare, robotics).", pills:[P.off,P.mf,P.offline],
+            children:[
+              { cat:"ofl", title:"BCQ", leaf:true,
+                intu:"Batch-constrained Q-learning: only consider actions close to those in the dataset, avoiding overestimated out-of-distribution actions.",
+                tex:"\\max_{a \\,\\approx\\, \\mathcal{D}} Q(s,a) \\quad \\text{(constrain to data-supported actions)}",
+                when:"Offline with narrow data coverage.", pills:[P.off,P.offline,P.val] },
+              { cat:"ofl", title:"CQL", leaf:true,
+                intu:"Conservative Q-learning: penalise values of out-of-distribution actions so Q lower-bounds the true value.",
+                tex:"\\min_Q\\; \\beta\\big(\\E_{s\\sim\\mathcal{D},a\\sim\\mu}[Q] - \\E_{\\mathcal{D}}[Q]\\big) + \\text{TD error}",
+                when:"Robust offline value learning.", pills:[P.off,P.offline,P.val] },
+              { cat:"ofl", title:"IQL", leaf:true,
+                intu:"Implicit Q-learning: fit values with expectile regression and never query out-of-sample actions, then extract a policy by advantage weighting.",
+                tex:"V \\leftarrow \\text{expectile}_\\tau\\big(Q(s,a)\\big), \\quad a \\sim \\mathcal{D}",
+                when:"Simple, strong offline baseline.", pills:[P.off,P.offline,P.ac] },
+              { cat:"ofl", title:"AWAC", leaf:true,
+                intu:"Advantage-weighted actor-critic: regress the policy onto dataset actions weighted by exp(advantage). Great for offline-to-online.",
+                tex:"\\pi(a\\!\\mid\\! s) \\;\\propto\\; \\exp\\!\\big(\\tfrac{1}{\\lambda} A(s,a)\\big)\\,\\mathbf{1}[(s,a)\\in\\mathcal{D}]",
+                when:"Offline pretraining then online finetuning.", pills:[P.off,P.offline,P.ac] },
+              { cat:"ofl", title:"Decision Transformer", leaf:true,
+                intu:"Recast RL as sequence modelling: a transformer predicts the next action conditioned on desired return-to-go, past states, and actions.",
+                tex:"a_t = \\text{Transformer}\\big(\\hat{R}_t, s_{\\le t}, a_{<t}\\big)",
+                when:"Offline RL framed as conditional generation.", pills:[P.off,P.offline] }
+            ] }
+        ] }
+    ]
+  };
+
+  var NW=198, NH=50, COLW=252, ROW=64;
+  var nodes=[], parentOf={};
+  (function index(node,parent){
+    node._id="n"+nodes.length; node._expanded=!!node.open;
+    node._search=(node.title+" "+node.intu+" "+(node.when||"")+" "+(node.pills||[]).join(" ").replace(/<[^>]+>/g,"")).toLowerCase();
+    nodes.push(node); parentOf[node._id]=parent;
+    (node.children||[]).forEach(function(c){ index(c,node); });
+  })(data,null);
+  var byId={}; nodes.forEach(function(n){ byId[n._id]=n; });
+  window._rlNodesList = nodes;
+
+  var stage=document.getElementById("stage"), world=document.getElementById("world"), panel=document.getElementById("panel");
+  var panX=60, panY=60, scale=1, visBounds={minX:0,minY:0,maxX:0,maxY:0}, selectedId=data._id;
+
+  function layout(){
+    var y=0;
+    (function walk(node,depth){
+      node._x=depth*COLW;
+      var kids=node._expanded?(node.children||[]):[];
+      if(kids.length){ var ys=[]; kids.forEach(function(c){ walk(c,depth+1); ys.push(c._y); }); node._y=(ys[0]+ys[ys.length-1])/2; }
+      else { node._y=y; y+=ROW; }
+    })(data,0);
+  }
+  function visibleNodes(){ var out=[]; (function walk(n){ out.push(n); if(n._expanded)(n.children||[]).forEach(walk); })(data); return out; }
+
+  function render(){
+    layout();
+    var vis=visibleNodes(), minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9;
+    vis.forEach(function(n){ minX=Math.min(minX,n._x); minY=Math.min(minY,n._y); maxX=Math.max(maxX,n._x+NW); maxY=Math.max(maxY,n._y+NH); });
+    visBounds={minX:minX,minY:minY,maxX:maxX,maxY:maxY};
+    var edges="";
+    vis.forEach(function(n){ if(n._expanded)(n.children||[]).forEach(function(c){
+      var x1=n._x+NW,y1=n._y+NH/2,x2=c._x,y2=c._y+NH/2,dx=Math.max(28,(x2-x1)/2);
+      edges+='<path d="M'+x1+' '+y1+' C'+(x1+dx)+' '+y1+', '+(x2-dx)+' '+y2+', '+x2+' '+y2+'" fill="none" stroke="'+cats[c.cat].dot+'" stroke-opacity="0.45" stroke-width="1.5"/>';
+    }); });
+    var html='<svg width="'+(maxX+NW)+'" height="'+(maxY+NH)+'">'+edges+'</svg>';
+    vis.forEach(function(n){
+      var meta=cats[n.cat], nKids=(n.children||[]).length;
+      var chev=nKids?'<i class="ti ti-chevron-'+(n._expanded?'down':'right')+' chev" aria-hidden="true"></i>':'';
+      var cnt=nKids?'<span class="cnt">'+nKids+'</span>':'';
+      var cls="gnode"+(n._id===selectedId?" sel":"")+(n._dim?" dim":"");
+      html+='<div class="'+cls+'" data-id="'+n._id+'" style="left:'+n._x+'px; top:'+n._y+'px; --n-dot:'+meta.dot+'">'+
+            '<div class="gt">'+n.title+'</div>'+
+            '<div class="gm"><span class="ct"><span class="dotc" style="background:'+meta.dot+'"></span>'+meta.label+'</span>'+cnt+chev+'</div></div>';
+    });
+    world.innerHTML=html; applyTransform();
+  }
+  function applyTransform(){ world.style.transform="translate("+panX+"px,"+panY+"px) scale("+scale+")"; }
+
+  function renderPanel(){
+    var n=byId[selectedId]||data, meta=cats[n.cat];
+    panel.innerHTML=
+      '<div class="ph"><span class="dotc" style="background:'+meta.dot+'"></span><span class="pt">'+n.title+'</span><span class="pc">'+meta.label+'</span>'+
+      '<span class="pills" style="margin-left:auto">'+(n.pills||[]).join("")+'</span></div>'+
+      '<div class="pintu">'+n.intu+'</div>'+
+      '<div class="lab">Equation</div><div class="eqbox" id="eqTarget"></div>'+
+      '<div class="lab">When to use</div><div class="pwhen">'+(n.when||"")+'</div>';
+    var t=document.getElementById("eqTarget");
+    if(window.katex){ try{ window.katex.render(n.tex,t,{displayMode:true,throwOnError:false,macros:KMACROS}); }catch(e){ t.textContent=n.tex; } }
+    else t.textContent=n.tex;
+  }
+
+  world.addEventListener("click",function(e){
+    var el=e.target.closest(".gnode"); if(!el) return;
+    var n=byId[el.dataset.id]; selectedId=n._id;
+    if((n.children||[]).length) n._expanded=!n._expanded;
+    render(); renderPanel();
+  });
+
+  var dragging=false,sx=0,sy=0,px0=0,py0=0;
+  stage.addEventListener("mousedown",function(e){
+    if(e.target.closest(".gnode")||e.target.closest(".b")) return;
+    dragging=true; sx=e.clientX; sy=e.clientY; px0=panX; py0=panY; stage.classList.add("drag");
+  });
+  window.addEventListener("mousemove",function(e){ if(!dragging) return; panX=px0+(e.clientX-sx); panY=py0+(e.clientY-sy); applyTransform(); });
+  window.addEventListener("mouseup",function(){ dragging=false; stage.classList.remove("drag"); });
+
+  function zoomAt(mx,my,f){ var ns=Math.min(2.2,Math.max(0.28,scale*f)); panX=mx-(mx-panX)*(ns/scale); panY=my-(my-panY)*(ns/scale); scale=ns; applyTransform(); }
+  stage.addEventListener("wheel",function(e){ e.preventDefault(); var r=stage.getBoundingClientRect(); zoomAt(e.clientX-r.left,e.clientY-r.top,e.deltaY<0?1.12:1/1.12); },{passive:false});
+  document.getElementById("zin").addEventListener("click",function(){ zoomAt(stage.clientWidth/2,stage.clientHeight/2,1.2); });
+  document.getElementById("zout").addEventListener("click",function(){ zoomAt(stage.clientWidth/2,stage.clientHeight/2,1/1.2); });
+
+  function fitView(){
+    var cw=stage.clientWidth,ch=stage.clientHeight; if(cw<10){ cw=700; ch=560; }
+    var w=visBounds.maxX-visBounds.minX,h=visBounds.maxY-visBounds.minY;
+    var s=Math.max(0.28,Math.min((cw-60)/w,(ch-60)/h,1.3));
+    scale=s; panX=(cw-w*s)/2-visBounds.minX*s; panY=(ch-h*s)/2-visBounds.minY*s; applyTransform();
+  }
+  window._rlFit=fitView;
+  document.getElementById("fit").addEventListener("click",fitView);
+  document.getElementById("expandAll").addEventListener("click",function(){ nodes.forEach(function(n){ if((n.children||[]).length) n._expanded=true; }); render(); fitView(); });
+  document.getElementById("collapseAll").addEventListener("click",function(){ nodes.forEach(function(n){ n._expanded=(n===data); }); render(); fitView(); });
+
+  document.getElementById("q").addEventListener("input",function(e){
+    var q=e.target.value.toLowerCase().trim();
+    if(!q){ nodes.forEach(function(n){ n._dim=false; }); render(); return; }
+    nodes.forEach(function(n){ n._match=n._search.indexOf(q)!==-1; n._dim=!n._match; });
+    nodes.forEach(function(n){ if(n._match){ var p=parentOf[n._id]; while(p){ p._expanded=true; p._dim=false; p=parentOf[p._id]; } } });
+    render(); fitView();
+  });
+
+  document.getElementById("legend").innerHTML=Object.keys(cats).map(function(k){
+    return '<span><span class="dotc" style="background:'+cats[k].dot+'"></span>'+cats[k].label+'</span>';
+  }).join("");
+
+  render(); renderPanel(); fitView();
+  if(!window.katex){ var tries=0; var iv=setInterval(function(){ if(window.katex){ clearInterval(iv); renderPanel(); } else if(++tries>120) clearInterval(iv); },50); }
+})();
+
+/* ================= EQUATIONS + NOTATION ================= */
+(function(){
+  var reg=[];
+  function M(tex,display){ var id="k"+reg.length; reg.push({id:id,tex:tex,display:!!display}); return (display?'<div':'<span')+' id="'+id+'"></'+(display?'div':'span')+'>'; }
+
+  var notaGroups=[
+    { cat:"root", name:"Core MDP", rows:[
+      { s:"s,\\ s'", name:"State", meaning:"current and next state.", used:"Everywhere.",
+        detail:"The agent's situation at time t. In tabular RL a state is just an index; in deep RL it is a feature vector or an image. s′ is shorthand for the next state. A good state captures everything needed to act (the Markov property)." },
+      { s:"a,\\ a'", name:"Action", meaning:"what the agent does.", used:"Policies, Q(s,a).",
+        detail:"The decision taken in a state. Discrete (left / right / fire) or continuous (a torque or steering angle). a′ is the action taken in the next state. The set of available actions is written A (the action space)." },
+      { s:"r,\\ r_{t+1}", name:"Reward", meaning:"scalar feedback after a step.", used:"Returns, all updates.",
+        detail:"A single number scoring the last transition. The convention used throughout this file: the action taken at step t produces the reward at step t+1. The agent never optimises r directly — it optimises the discounted sum of rewards, the return.", eg:"r_{t+1} = R(s_t, a_t)" },
+      { s:"t,\\ T", name:"Time, horizon", meaning:"timestep and terminal time.", used:"Returns, n-step methods.",
+        detail:"t indexes steps within an episode. T is the final step of an episodic task (its horizon); continuing tasks set T = ∞, which is why the discount γ is needed to keep the return finite." },
+      { s:"\\gamma", name:"Discount factor", meaning:"0–1; weight on future reward.", used:"Every return and Bellman equation.",
+        detail:"Controls how far-sighted the agent is. γ → 0 is myopic (only the next reward matters); γ → 1 weights the whole future almost equally. It also guarantees the infinite-horizon return converges.", eg:"G_t = \\sum_{k\\ge0}\\gamma^k r_{t+k+1}" },
+      { s:"G_t", name:"Return", meaning:"total discounted reward from t.", used:"MC targets, the objective.",
+        detail:"The quantity every method ultimately maximises: the discounted sum of all future rewards from time t onward. Monte Carlo uses the observed return directly; TD methods estimate it by bootstrapping.", eg:"G_t = r_{t+1} + \\gamma r_{t+2} + \\gamma^2 r_{t+3} + \\cdots" },
+      { s:"\\tau", name:"Trajectory", meaning:"a rollout s<sub>0</sub>,a<sub>0</sub>,r<sub>1</sub>,s<sub>1</sub>,…", used:"Policy gradient.",
+        detail:"One full sequence of states, actions, and rewards produced by running a policy. Policy-gradient methods take expectations over trajectories sampled from π<sub>θ</sub>." },
+      { s:"\\mathcal{S},\\ \\mathcal{A}", name:"State / action space", meaning:"sets of all states and actions.", used:"Dueling DQN, expectations over actions.",
+        detail:"S is the set of all states and A the set of all actions; the number of actions |A| appears, for example, in the dueling-network advantage normalisation." },
+      { s:"p(s',r\\mid s,a)", name:"Dynamics", meaning:"full environment model.", used:"Definition of an MDP.",
+        detail:"The complete one-step description of the world: the joint probability of the next state and reward given the current state and action. Knowing it makes a problem model-based; not knowing it makes it model-free." }
+    ]},
+    { cat:"pg", name:"Policies", rows:[
+      { s:"\\pi(a\\mid s)", name:"Policy", meaning:"probability of action a in state s.", used:"Everywhere.",
+        detail:"The agent's behavior — a distribution over actions for each state. Finding the optimal policy π* is the goal of control. It can be stochastic (a distribution) or deterministic (one action)." },
+      { s:"\\pi_\\theta", name:"Parameterised policy", meaning:"policy with weights θ.", used:"Policy gradient, actor-critic.",
+        detail:"A policy represented by a function approximator (usually a neural network) with trainable weights θ, optimised by gradient ascent on expected return. The basis of all deep policy-gradient methods." },
+      { s:"\\pi^\\ast", name:"Optimal policy", meaning:"maximises return.", used:"Bellman optimality.",
+        detail:"Any policy achieving the maximum value in every state. Every finite MDP has at least one deterministic optimal policy, and acting greedily with respect to Q* yields one.", eg:"\\pi^\\ast = \\argmax_\\pi \\E_\\pi[G_0]" },
+      { s:"\\mu_\\theta(s)", name:"Deterministic policy", meaning:"outputs one action.", used:"DDPG, TD3.",
+        detail:"A policy that returns a single action rather than a distribution. Used for continuous control in DDPG and TD3, where the gradient flows through the critic Q into the actor μ." },
+      { s:"b(a\\mid s)", name:"Behavior policy", meaning:"generates the data.", used:"Off-policy MC, Q-learning.",
+        detail:"The policy that actually collected the experience, which may differ from the target policy being learned. This mismatch is the defining feature of off-policy learning and is corrected with importance sampling ρ<sub>t</sub>." },
+      { s:"\\pi_{\\text{old}},\\ \\pi_{\\text{ref}}", name:"Old / reference policy", meaning:"frozen baselines.", used:"PPO, TRPO, GRPO.",
+        detail:"Frozen copies used to constrain updates. π<sub>old</sub> is the previous iteration's policy (the denominator of the PPO ratio); π<sub>ref</sub> is a fixed anchor that a KL penalty keeps the new policy close to, central to RLHF." }
+    ]},
+    { cat:"td", name:"Value functions", rows:[
+      { s:"V(s),\\ V_\\pi(s)", name:"State value", meaning:"expected return from s.", used:"TD, critics, baselines.",
+        detail:"Answers 'how good is it to be in state s?' — the expected return if you start in s and follow π forever. The critic in actor-critic methods learns an approximation of V.", eg:"V_\\pi(s) = \\E_\\pi[\\,G_t \\mid s_t = s\\,]" },
+      { s:"V^\\ast(s)", name:"Optimal state value", meaning:"best achievable V.", used:"Value iteration.",
+        detail:"The value of s under an optimal policy — the most return obtainable from s. Value iteration computes it via repeated Bellman-optimality backups." },
+      { s:"V_w(s)", name:"Critic", meaning:"learned value with weights w.", used:"Actor-critic, GAE.",
+        detail:"A parameterised approximation of V used as a baseline / critic. Subtracting V<sub>w</sub> from returns dramatically reduces the variance of the policy gradient without adding bias." },
+      { s:"Q(s,a),\\ Q_\\pi", name:"Action value", meaning:"return from s after taking a.", used:"SARSA, Q-learning, DQN.",
+        detail:"The expected return from state s after committing to action a, then following π. Acting greedily with respect to Q gives a policy, which is why value-based methods need no explicit policy.", eg:"Q_\\pi(s,a) = \\E_\\pi[\\,G_t \\mid s_t = s,\\, a_t = a\\,]" },
+      { s:"Q^\\ast(s,a)", name:"Optimal action value", meaning:"best achievable Q.", used:"Q-learning target.",
+        detail:"The action value under an optimal policy. Q-learning estimates Q* directly, and acting greedily with respect to Q* is optimal." },
+      { s:"Q_\\theta,\\ Q_{\\theta^-}", name:"Online / target Q", meaning:"net and its slow copy.", used:"DQN family.",
+        detail:"In deep value methods Q-theta is the network being trained, while the target network is a slowly-updated copy that defines the regression target — decoupling them prevents the unstable 'moving target' problem." },
+      { s:"A(s,a)", name:"Advantage", meaning:"Q(s,a) − V(s).", used:"Actor-critic, PPO.",
+        detail:"How much better action a is than the state's average action. Centring the learning signal around V keeps the gradient pointed at relatively-better actions and slashes its variance.", eg:"A_\\pi(s,a) = Q_\\pi(s,a) - V_\\pi(s)" },
+      { s:"\\hat{A}_t", name:"Advantage estimate", meaning:"sampled advantage, e.g. GAE.", used:"PPO, TRPO, A2C.",
+        detail:"A practical estimate of the advantage from sampled data, most often Generalised Advantage Estimation. It is the weight multiplying the log-probability gradient in modern policy-gradient methods.", eg:"\\hat{A}_t = \\sum_{l\\ge0}(\\gamma\\lambda)^l \\delta_{t+l}" },
+      { s:"Z(s,a)", name:"Return distribution", meaning:"the full distribution of returns.", used:"C51, QR-DQN, IQN.",
+        detail:"Distributional RL models the entire distribution of the return, not just its mean Q. Learning Z gives a richer signal and more stable training; the agent still acts on its expected value.", eg:"Q(s,a) = \\E[\\,Z(s,a)\\,]" }
+    ]},
+    { cat:"dqn", name:"Learning & updates", rows:[
+      { s:"\\alpha", name:"Learning rate", meaning:"step size of each update.", used:"All tabular updates.",
+        detail:"How far each update moves the estimate toward its target. Too large and learning diverges or oscillates; too small and it crawls. Often annealed over training." },
+      { s:"\\delta_t", name:"TD error", meaning:"the bootstrapping surprise.", used:"TD, SARSA, actor-critic.",
+        detail:"The gap between the bootstrapped target and the current estimate — the core learning signal of temporal-difference methods. A positive δ means things went better than expected.", eg:"\\delta_t = r_{t+1} + \\gamma V(s_{t+1}) - V(s_t)" },
+      { s:"\\lambda", name:"Trace / GAE decay", meaning:"mixes short and long backups.", used:"TD(λ), GAE.",
+        detail:"A 0–1 knob interpolating between one-step TD (λ = 0) and Monte Carlo (λ = 1). It sets how much weight longer multi-step returns receive, and is the decay rate in GAE." },
+      { s:"e_t(s)", name:"Eligibility trace", meaning:"short-term credit memory.", used:"TD(λ), SARSA(λ).",
+        detail:"A fading record of how recently and often each state was visited, letting a single TD error update many recent states at once — the mechanism that makes TD(λ) efficient.", eg:"e_t(s) = \\gamma\\lambda\\,e_{t-1}(s) + \\mathbf{1}[s{=}s_t]" },
+      { s:"\\varepsilon", name:"Explore / clip", meaning:"two roles — context tells which.", used:"ε-greedy, PPO.",
+        detail:"In value methods, the probability of taking a random action in ε-greedy exploration. In PPO, the width of the clipping range [1−ε, 1+ε]. Same letter, unrelated jobs." },
+      { s:"\\theta,\\ w", name:"Parameters", meaning:"policy / value weights.", used:"Deep RL.",
+        detail:"Trainable weights of the function approximators: θ usually denotes the policy (actor) parameters, w the value-function (critic) parameters." },
+      { s:"\\nabla_\\theta", name:"Gradient", meaning:"derivative w.r.t. θ.", used:"Policy gradient.",
+        detail:"The direction in parameter space that most increases a quantity. Policy-gradient methods ascend ∇<sub>θ</sub> J to push up expected return.", eg:"\\nabla_\\theta J = \\E_\\pi[\\nabla_\\theta \\log\\pi_\\theta(a_t\\mid s_t)\\,\\hat{A}_t]" },
+      { s:"J(\\theta)", name:"Objective", meaning:"expected return to maximise.", used:"Policy gradient.",
+        detail:"The performance measure being optimised — the expected return of the policy π<sub>θ</sub>. Training is gradient ascent on J.", eg:"J(\\theta) = \\E_{\\pi_\\theta}[\\,G_0\\,]" },
+      { s:"N(s,a)", name:"Visit count", meaning:"times (s,a) was seen.", used:"MC averaging, MCTS.",
+        detail:"A counter used to average returns (Monte Carlo) and to drive exploration bonuses such as the UCT term in tree search." }
+    ]},
+    { cat:"mb", name:"Model & planning", rows:[
+      { s:"P(s'\\mid s,a)", name:"Transition model", meaning:"the dynamics.", used:"DP, planning.",
+        detail:"The probability of landing in s′ after taking a in s. Available only when the model is known (DP) or learned (Dyna, MuZero); model-free methods never see it." },
+      { s:"R(s,a)", name:"Reward model", meaning:"expected reward.", used:"DP, planning.",
+        detail:"The expected immediate reward predicted by the model for a state-action pair. Together with P it defines an MDP the agent can plan inside." },
+      { s:"\\hat{P},\\ \\hat{R}", name:"Learned model", meaning:"estimated dynamics / reward.", used:"Dyna-Q, World Models, MuZero.",
+        detail:"Approximations of P and R fitted from experience, then used to generate imagined transitions for planning or to train a model-free learner more sample-efficiently." },
+      { s:"c", name:"Exploration constant", meaning:"UCT weight.", used:"MCTS, AlphaZero.",
+        detail:"Trades exploration against exploitation inside Monte Carlo tree search: larger c favours less-visited actions in the UCT selection rule.", eg:"\\argmax_a\\Big[Q(s,a) + c\\sqrt{\\tfrac{\\ln N(s)}{N(s,a)}}\\Big]" },
+      { s:"N(s)", name:"Node visits", meaning:"tree-search statistic.", used:"MCTS.",
+        detail:"The total number of times a search-tree node (state) has been visited, used in UCT's exploration bonus." }
+    ]},
+    { cat:"dp", name:"Operators & distributions", rows:[
+      { s:"\\E[\\cdot]", name:"Expectation", meaning:"average over randomness.", used:"Everywhere.",
+        detail:"The probability-weighted average of a quantity over the randomness in the policy and environment. Almost every RL definition — values, returns, objectives — is an expectation." },
+      { s:"\\mathcal{T}", name:"Bellman operator", meaning:"the backup map.", used:"DP, distributional RL.",
+        detail:"The operator that applies one Bellman backup to a value function. It is a contraction, so iterating it converges to the unique fixed point V* (or Q*).", eg:"(\\mathcal{T}V)(s) = \\max_a\\big[R(s,a) + \\gamma\\textstyle\\sum_{s'} P\\,V(s')\\big]" },
+      { s:"\\mathrm{KL}(p\\Vert q)", name:"KL divergence", meaning:"distance between distributions.", used:"TRPO, PPO, GRPO.",
+        detail:"A non-symmetric measure of how far one distribution is from another. Trust-region and RLHF methods bound or penalise the KL between the new and old/reference policies to keep updates safe." },
+      { s:"\\mathcal{H}(\\pi)", name:"Entropy", meaning:"randomness of π.", used:"SAC, max-entropy RL.",
+        detail:"How uncertain the policy is. Adding an entropy bonus to the reward encourages exploration and more robust policies — the key idea behind soft actor-critic.", eg:"\\mathcal{H}(\\pi(\\cdot\\mid s)) = -\\sum_a \\pi(a\\mid s)\\log\\pi(a\\mid s)" },
+      { s:"\\rho_t", name:"Importance ratio", meaning:"π / b correction.", used:"Off-policy MC, V-trace.",
+        detail:"Reweights data gathered under the behavior policy b so it can be used to evaluate the target policy π. Products of these ratios can explode, which is why many off-policy methods clip them.", eg:"\\rho_t = \\frac{\\pi(a_t\\mid s_t)}{b(a_t\\mid s_t)}" },
+      { s:"\\mathbf{1}[\\cdot]", name:"Indicator", meaning:"1 if true, else 0.", used:"Eligibility traces.",
+        detail:"A function equal to 1 when its condition holds and 0 otherwise — used, for instance, to mark the current state when updating eligibility traces." },
+      { s:"x\\sim p", name:"Sampled from", meaning:"x drawn from p.", used:"Notation throughout.",
+        detail:"Read 'x is distributed as p' or 'x is sampled from p'. An expectation E[·] taken with x ∼ p averages over such samples." }
+    ]},
+    { cat:"ofl", name:"Deep · RLHF · offline", rows:[
+      { s:"\\theta^-", name:"Target params", meaning:"a slow copy of θ.", used:"DQN, DDPG, TD3.",
+        detail:"A frozen or slowly-tracking copy of the network weights used to compute the learning target. Holding it still prevents the network from chasing its own constantly-shifting predictions." },
+      { s:"\\beta", name:"KL weight", meaning:"reference-policy penalty.", used:"GRPO, RLHF.",
+        detail:"Scales a KL-divergence penalty that keeps the trained policy near a fixed reference policy — the standard way RLHF stops a model from drifting too far from its pretrained behavior." },
+      { s:"r_t(\\theta)", name:"Probability ratio", meaning:"new vs old action prob.", used:"PPO, GRPO.",
+        detail:"How much more (or less) likely the updated policy makes the action that was taken, relative to the old policy. PPO clips this ratio to keep each update small.", eg:"r_t(\\theta) = \\frac{\\pi_\\theta(a_t\\mid s_t)}{\\pi_{\\text{old}}(a_t\\mid s_t)}" },
+      { s:"\\mathrm{clip}(\\cdot)", name:"Clipping", meaning:"bound the ratio.", used:"PPO, GRPO.",
+        detail:"Caps the probability ratio to the interval [1−ε, 1+ε] so a single optimisation step cannot move the policy too far — PPO's cheap stand-in for TRPO's trust region.", eg:"\\mathrm{clip}\\big(r_t(\\theta),\\,1-\\varepsilon,\\,1+\\varepsilon\\big)" },
+      { s:"\\mathcal{D}", name:"Dataset", meaning:"fixed transitions.", used:"Offline RL, replay buffers.",
+        detail:"A fixed buffer of previously collected transitions. Offline RL must learn entirely from a fixed dataset with no new interaction, which is why it must guard against unreliable out-of-distribution action values." },
+      { s:"\\odot", name:"Elementwise product", meaning:"multiply entry by entry.", used:"Noisy Nets.",
+        detail:"The Hadamard product — multiplies two vectors component by component. Noisy Nets use it to inject learnable per-weight noise for exploration.", eg:"w = \\mu + \\sigma \\odot \\epsilon" },
+      { s:"\\hat{R}_t", name:"Return-to-go", meaning:"desired future return.", used:"Decision Transformer.",
+        detail:"The cumulative future reward you want from time t onward, supplied as a conditioning token so a sequence model generates actions that achieve that target.", eg:"\\hat{R}_t = \\sum_{t'\\ge t} r_{t'}" }
+    ]}
+  ];
+
+  var eqGroups=[
+    { cat:"root", name:"Foundations", rows:[
+      ["Return","G_t = r_{t+1} + \\gamma r_{t+2} + \\cdots = \\sum_{k\\ge 0} \\gamma^k r_{t+k+1}","definition"],
+      ["Bellman expectation V","V_\\pi(s) = \\sum_a \\pi(a\\!\\mid\\! s)\\big[\\, R(s,a) + \\gamma \\sum_{s'} P(s'\\!\\mid\\! s,a)\\,V_\\pi(s') \\,\\big]","model-based"],
+      ["Bellman expectation Q","Q_\\pi(s,a) = R(s,a) + \\gamma \\sum_{s'} P(s'\\!\\mid\\! s,a)\\sum_{a'}\\pi(a'\\!\\mid\\! s')Q_\\pi(s',a')","model-based"],
+      ["Bellman optimality","V^\\ast(s) = \\max_a \\big[\\, R(s,a) + \\gamma \\sum_{s'} P(s'\\!\\mid\\! s,a)\\,V^\\ast(s') \\,\\big]","model-based"],
+      ["Advantage","A_\\pi(s,a) = Q_\\pi(s,a) - V_\\pi(s)","definition"]
+    ]},
+    { cat:"dp", name:"Dynamic programming", rows:[
+      ["Policy evaluation","V_{k+1}(s) \\leftarrow \\sum_a \\pi(a\\!\\mid\\! s)\\big[\\, R(s,a) + \\gamma \\sum_{s'} P(s'\\!\\mid\\! s,a)\\,V_k(s') \\,\\big]","model-based"],
+      ["Policy improvement","\\pi'(s) = \\argmax_a \\big[\\, R(s,a) + \\gamma \\sum_{s'} P(s'\\!\\mid\\! s,a)\\,V_\\pi(s') \\,\\big]","model-based"],
+      ["Value iteration","V_{k+1}(s) \\leftarrow \\max_a \\big[\\, R(s,a) + \\gamma \\sum_{s'} P(s'\\!\\mid\\! s,a)\\,V_k(s') \\,\\big]","value-based"]
+    ]},
+    { cat:"mc", name:"Monte Carlo", rows:[
+      ["MC value","V(s_t) \\leftarrow V(s_t) + \\alpha\\big[\\, G_t - V(s_t) \\,\\big]","model-free"],
+      ["MC control (on-policy)","Q(s_t,a_t) \\leftarrow Q(s_t,a_t) + \\alpha\\big[\\, G_t - Q(s_t,a_t) \\,\\big]","on-policy"],
+      ["MC off-policy","\\rho_t = \\prod_{k=t}^{T} \\tfrac{\\pi(a_k\\mid s_k)}{b(a_k\\mid s_k)}, \\;\\; V(s_t) \\mathrel{+}= \\alpha[\\rho_t G_t - V(s_t)]","off-policy"]
+    ]},
+    { cat:"td", name:"Temporal difference", rows:[
+      ["TD error","\\delta_t = r_{t+1} + \\gamma V(s_{t+1}) - V(s_t)","model-free"],
+      ["TD(0)","V(s_t) \\leftarrow V(s_t) + \\alpha\\big[\\, r_{t+1} + \\gamma V(s_{t+1}) - V(s_t) \\,\\big]","value-based"],
+      ["n-step return","G_t^{(n)} = r_{t+1} + \\cdots + \\gamma^{n-1} r_{t+n} + \\gamma^n V(s_{t+n})","value-based"],
+      ["SARSA","Q(s_t,a_t) \\mathrel{+}= \\alpha\\big[\\, r_{t+1} + \\gamma Q(s_{t+1},a_{t+1}) - Q(s_t,a_t) \\,\\big]","on-policy"],
+      ["Expected SARSA","Q(s_t,a_t) \\mathrel{+}= \\alpha\\big[\\, r_{t+1} + \\gamma \\sum_{a'}\\pi(a'\\!\\mid\\! s')Q(s',a') - Q(s_t,a_t) \\,\\big]","on-policy"],
+      ["Q-learning","Q(s_t,a_t) \\mathrel{+}= \\alpha\\big[\\, r_{t+1} + \\gamma \\max_{a'} Q(s_{t+1},a') - Q(s_t,a_t) \\,\\big]","off-policy"],
+      ["Double Q","a^\\ast{=}\\argmax_{a'} Q_A(s',a'), \\;\\; Q_A \\mathrel{+}= \\alpha[\\, r + \\gamma Q_B(s',a^\\ast) - Q_A \\,]","off-policy"],
+      ["TD(λ)","e_t(s) = \\gamma\\lambda\\,e_{t-1}(s) + \\mathbf{1}[s{=}s_t], \\;\\; V(s) \\mathrel{+}= \\alpha\\,\\delta_t\\,e_t(s)","value-based"]
+    ]},
+    { cat:"dqn", name:"Deep value (DQN)", rows:[
+      ["DQN loss","L(\\theta) = \\E\\big[(\\, r + \\gamma \\max_{a'} Q_{\\theta^-}(s',a') - Q_\\theta(s,a) \\,)^2\\big]","off-policy"],
+      ["Double DQN target","y = r + \\gamma Q_{\\theta^-}\\big(s', \\argmax_{a'} Q_\\theta(s',a')\\big)","off-policy"],
+      ["Dueling","Q(s,a) = V(s) + A(s,a) - \\tfrac{1}{|\\mathcal{A}|}\\sum_{a'} A(s,a')","off-policy"],
+      ["Distributional Bellman","\\mathcal{T}Z(s,a) \\overset{D}{=} r + \\gamma Z\\big(s', \\argmax_{a'} \\E[Z(s',a')]\\big)","distributional"]
+    ]},
+    { cat:"pg", name:"Policy gradient", rows:[
+      ["PG theorem","\\nabla_\\theta J(\\theta) = \\E_\\pi\\big[\\, \\nabla_\\theta \\log \\pi_\\theta(a_t\\!\\mid\\! s_t)\\,G_t \\,\\big]","policy-based"],
+      ["REINFORCE","\\theta \\leftarrow \\theta + \\alpha\\,\\nabla_\\theta \\log \\pi_\\theta(a_t\\!\\mid\\! s_t)\\,(G_t - b(s_t))","on-policy"],
+      ["Actor-critic","\\theta \\mathrel{+}= \\alpha_\\theta\\,\\delta_t\\,\\nabla_\\theta \\log \\pi_\\theta, \\;\\; \\delta_t = r_{t+1}+\\gamma V_w(s_{t+1})-V_w(s_t)","actor-critic"],
+      ["GAE","\\hat{A}_t = \\sum_{l\\ge 0} (\\gamma\\lambda)^l\\,\\delta_{t+l}","actor-critic"],
+      ["TRPO","L^{\\text{TRPO}} = \\E_{a_t\\sim\\pi_{\\theta_{\\text{old}}}(\\cdot\\mid s_t)}\\left[\\frac{\\pi_\\theta(a_t\\mid s_t)}{\\pi_{\\theta_{\\text{old}}}(a_t\\mid s_t)}\\,A(s_t,a_t)\\right] \\;\\;\\text{s.t.}\\;\\; \\E_{a_t\\sim\\pi_{\\theta_{\\text{old}}}(\\cdot\\mid s_t)}\\!\\left[\\mathrm{KL}\\big(\\pi_{\\theta_{\\text{old}}}(\\cdot\\mid s_t),\\,\\pi_\\theta(\\cdot\\mid s_t)\\big)\\right] \\le \\delta","actor-critic"],
+      ["PPO","L^{\\text{PPO}} = \\E_{a_t\\sim\\pi_{\\theta_{\\text{old}}}(\\cdot\\mid s_t)}\\left[\\min\\!\\left(\\frac{\\pi_\\theta(a_t\\mid s_t)}{\\pi_{\\theta_{\\text{old}}}(a_t\\mid s_t)}\\,A(s_t,a_t),\\ \\mathrm{clip}\\!\\left(\\frac{\\pi_\\theta(a_t\\mid s_t)}{\\pi_{\\theta_{\\text{old}}}(a_t\\mid s_t)},\\,1\\!-\\!\\epsilon,\\,1\\!+\\!\\epsilon\\right)A(s_t,a_t)\\right)\\right]","actor-critic"],
+      ["GRPO","L^{\\text{GRPO}} = \\E_{a_t\\sim\\pi_{\\theta_{\\text{old}}}(\\cdot\\mid s_t)}\\left[\\sum_{i=1}^{G}\\min\\!\\left(\\frac{\\pi_\\theta(a_t\\mid s_t)}{\\pi_{\\theta_{\\text{old}}}(a_t\\mid s_t)}\\,A_i(s_t,a_t),\\ \\mathrm{clip}\\!\\left(\\frac{\\pi_\\theta(a_t\\mid s_t)}{\\pi_{\\theta_{\\text{old}}}(a_t\\mid s_t)},\\,1\\!-\\!\\epsilon,\\,1\\!+\\!\\epsilon\\right)A_i(s_t,a_t)\\right)\\right],\\quad A_i(s_t,a_t)=\\frac{R(\\tau_i)-\\mathrm{mean}\\big(\\{R(\\tau_i)\\}_{i=1}^{G}\\big)}{\\mathrm{std}\\big(\\{R(\\tau_i)\\}_{i=1}^{G}\\big)}","actor-critic"],
+      ["DDPG","\\nabla_\\theta J = \\E\\big[\\, \\nabla_a Q(s,a)\\big|_{a=\\mu_\\theta(s)}\\,\\nabla_\\theta \\mu_\\theta(s) \\,\\big]","off-policy"],
+      ["TD3 target","y = r + \\gamma \\min_{i=1,2} Q_{\\theta_i^-}\\big(s', \\mu(s')+\\epsilon\\big)","off-policy"],
+      ["SAC","J(\\pi) = \\sum_t \\E\\big[\\, r(s_t,a_t) + \\alpha\\,\\mathcal{H}(\\pi(\\cdot\\!\\mid\\! s_t)) \\,\\big]","off-policy"]
+    ]}
+  ];
+
+  var eqWhyOld={
+    "Return":"The return is what RL actually maximises — not the immediate reward, but the whole discounted stream of future rewards from time t onward. The discount γ < 1 makes near-term rewards count more and keeps the infinite sum finite. Every value function is just an expected return under some policy.",
+    "Bellman expectation V":"Says the value of a state equals the immediate reward plus the discounted value of wherever you land next, averaged over the policy's actions and the environment's transitions. It is a consistency condition: if your values obey it, they are correct for that policy. DP, TD and MC are all different ways of solving it.",
+    "Bellman expectation Q":"The same consistency idea for action values: taking a now, then following π, is worth the immediate reward plus the discounted value of the next state-action pair. Working with Q instead of V is what lets value-based methods choose actions without a model — just take the argmax.",
+    "Bellman optimality":"Replaces the policy average with a max: the best value of a state is the best action's immediate reward plus its discounted best next value. Its unique solution is V*, and acting greedily with respect to it is optimal. Value iteration simply turns this equation into an update.",
+    "Advantage":"How much better a specific action is than the state's average action under π. Subtracting V centres the signal around zero, so policy-gradient updates push toward genuinely better-than-average actions and ignore the baseline 'how good is this state' part — which dramatically cuts variance.",
+    "Policy evaluation":"Turns the Bellman expectation equation into an iterative update: sweep over states, replacing each value with the right-hand side, and repeat. Because the Bellman operator is a contraction, the values provably converge to the true values of that policy. This is the 'evaluate' half of policy iteration.",
+    "Policy improvement":"Given accurate values for the current policy, build a better one by acting greedily — pick the action with the highest expected reward-plus-next-value in each state. The policy-improvement theorem guarantees the new policy is at least as good, and strictly better unless it was already optimal.",
+    "Value iteration":"Skips waiting for full evaluation: each sweep applies the Bellman optimality backup (the max), folding evaluation and improvement into a single step. It converges to V* faster in practice, after which the greedy policy is optimal.",
+    "MC value":"Monte Carlo learning: after an episode ends, nudge the visited state's value a fraction α toward the actual return that followed it. No model and no bootstrapping — just sample real returns and average them. Unbiased, but you must wait for the episode to end and the variance is high.",
+    "MC control (on-policy)":"The control version: average returns into Q instead of V, then act ε-greedily with respect to Q so the policy keeps improving while still exploring. Annealing ε toward zero (the GLIE condition) makes it converge to the optimal policy.",
+    "MC off-policy":"Lets you learn about a target policy from data generated by a different behavior policy. Each return is reweighted by the importance ratio — the product of π over b along the trajectory — to correct for the mismatch. Powerful, but those products can blow the variance up.",
+    "TD error":"The single most important quantity in RL: the gap between what you just observed (reward plus discounted next-state value) and what you predicted. Positive means pleasantly surprised. Every TD method is essentially 'nudge the estimate in the direction of δ'.",
+    "TD(0)":"Updates a value after just one step, using its own current estimate of the next state as a stand-in for the rest of the return (bootstrapping). Unlike Monte Carlo it works online and on never-ending tasks, trading a little bias for much lower variance.",
+    "n-step return":"A middle ground between TD(0) and Monte Carlo: take the real rewards for n steps, then bootstrap with the value estimate at step n. Small n is biased but stable; large n approaches MC. n is the knob that trades bias against variance.",
+    "SARSA":"On-policy TD control. The target uses Q(s′,a′) for the action the policy actually takes next, so SARSA learns the value of the policy it is following — including its own exploration. That makes it cautious: near a cliff it learns a safer path because its random steps sometimes fall off.",
+    "Expected SARSA":"Like SARSA, but replaces the single sampled next action with the expectation over all next actions under π. This removes the variance from sampling that action while keeping the on-policy target, usually giving more stable learning for a little extra compute.",
+    "Q-learning":"Off-policy TD control. The target uses the value of the best next action — the max over next actions — regardless of which action the behavior policy actually takes. So it learns Q* directly from any exploratory data. With a neural network and replay buffer this becomes DQN.",
+    "Double Q":"Plain Q-learning's max both selects and evaluates the next action using the same noisy estimates, which systematically overestimates. Double Q keeps two value functions and uses one to choose the action and the other to score it, breaking that bias.",
+    "TD(λ)":"Generalises n-step returns into one elegant mechanism. An eligibility trace marks recently visited states; a single TD error then updates all of them, weighted by how recently they occurred. λ smoothly interpolates from TD(0) at 0 to Monte Carlo at 1.",
+    "DQN loss":"Casts Q-learning as regression: minimise the squared TD error of a neural network. Two tricks make it stable — a replay buffer that breaks correlations between consecutive samples, and a target network (a frozen copy of the weights) that holds the regression target still while the main network trains.",
+    "Double DQN target":"Brings the double-Q fix to deep RL: the online network chooses the best next action, but the frozen target network evaluates it. A tiny change to the target that noticeably reduces the value overestimation DQN is prone to.",
+    "Dueling":"Splits the network into two streams — one estimating the state value, one the per-action advantage — then recombines them into Q. It learns which states are valuable even when the choice of action barely matters, improving learning where many actions are similar.",
+    "Distributional Bellman":"Instead of predicting the mean return, predict its whole distribution Z(s,a). The Bellman backup becomes a distributional equation: shift by the reward and scale by γ. The richer target stabilises and improves learning; the agent still acts on the mean. This is the basis of C51, QR-DQN and IQN.",
+    "PG theorem":"The foundation of policy-gradient methods: the gradient of expected return equals the expected score function (gradient of log-probability) times the return. Crucially it contains no derivative of the environment, so you can optimise the policy from samples alone, even when the dynamics are unknown.",
+    "REINFORCE":"The simplest policy gradient: push up the log-probability of each action in proportion to the return that followed it. Good actions become more likely, bad ones less. Subtracting a baseline b(s) ≈ V(s) leaves the gradient unbiased but cuts its notoriously high variance.",
+    "Actor-critic":"Combines the two families: the actor is the policy, the critic is a learned value function. The critic's TD error δ replaces the noisy Monte Carlo return as the actor's learning signal, giving lower variance and online, step-by-step updates.",
+    "GAE":"Generalised Advantage Estimation builds the advantage from an exponentially-weighted sum of TD errors. λ trades bias (small λ, lean on the critic) against variance (large λ, lean on real rewards). It is the default advantage estimator feeding TRPO and PPO.",
+    "TRPO":"Makes each policy update as large as possible while provably not departing too far from the current policy, by constraining the average KL divergence to a small trust region. The constraint prevents the catastrophic collapses that plague naive policy gradients, at the cost of expensive second-order optimisation.",
+    "PPO":"A first-order approximation of TRPO's idea. Instead of a hard KL constraint it clips the probability ratio so the objective stops rewarding moves beyond [1−ε, 1+ε]. Simple to implement, robust, and the default for continuous control and RLHF.",
+    "GRPO":"Drops the critic entirely. For each prompt it samples a group of responses, scores them, and uses the group's mean and standard deviation to turn each reward into an advantage. A KL term anchors the policy to a reference. Used to train reasoning models such as DeepSeek-R1.",
+    "DDPG":"Extends the policy gradient to a deterministic actor for continuous actions. The gradient of the objective flows from the critic back through the chosen action into the actor. Off-policy with a replay buffer, but sensitive to hyperparameters and prone to overestimation.",
+    "TD3 target":"Fixes DDPG's instability with three tricks: twin critics whose minimum is taken (curbing overestimation), delayed and less frequent actor updates, and noise added to the target action to smooth the value estimate. The formula shows the twin-critic minimum target.",
+    "SAC":"Maximum-entropy RL: optimise reward plus the policy's entropy, so the agent is rewarded for staying as random as it can while still succeeding. This yields strong exploration and robustness. Off-policy with twin critics, it is a top choice for continuous control."
+  };
+  var eqWhyHTML={
+    "Return":"<p>The <b>return</b> G is the one quantity reinforcement learning exists to maximise — not the next reward, but the entire stream of future rewards, each discounted more the further away it is.</p><ul><li><b>r</b> at each step — the immediate reward the environment returns.</li><li><b>γ</b> (0–1) — the discount: weight 1 on the next reward, γ on the one after, γ² after that.</li><li><b>Σ</b> — sum that whole discounted series from time t to the end.</li></ul><p>γ does two jobs: it sets how far-sighted the agent is (near 0 = greedy for immediate reward, near 1 = patient), and it makes an infinite sum converge to a finite number so values stay well defined on never-ending tasks. Every V and Q on this page is just an expectation of this return under some policy.</p>",
+    "Bellman expectation V":"<p>The <b>consistency equation</b> every correct value function obeys: the value of a state is written using only the immediate reward and the values of the states one step later — never the whole future.</p><ul><li><b>Σ<sub>a</sub> π(a|s)</b> — average over the actions the policy might take.</li><li><b>R(s,a)</b> — the reward expected for that action.</li><li><b>γ Σ<sub>s′</sub> P(s′|s,a) V(s′)</b> — discounted value of the next state, averaged over where the dynamics send you.</li></ul><p>In words: value now = reward + discounted value next, averaged over the policy's and the environment's randomness. If your numbers satisfy this everywhere, they are exactly V for that policy. DP solves it by iterating, Monte Carlo by sampling full returns, TD by sampling one step and bootstrapping — three attacks on one equation.</p>",
+    "Bellman expectation Q":"<p>The same consistency idea, but anchored to a state <i>and</i> a first action: if I take a now and then follow π, what return should I expect?</p><ul><li><b>R(s,a)</b> — reward for committing to a here.</li><li><b>γ Σ<sub>s′</sub> P(s′|s,a)</b> — discounted, averaged over the next states.</li><li><b>Σ<sub>a′</sub> π(a′|s′) Q(s′,a′)</b> — value of the next state, itself averaged over the policy's next action.</li></ul><p>Why Q rather than V? Q already bakes in the 'what if I do a' comparison, so greedy action selection is just argmax<sub>a</sub> Q(s,a) — no model of the dynamics needed. That one property is what lets SARSA, Q-learning and DQN do control without ever knowing P.</p>",
+    "Bellman optimality":"<p>Swap the policy-average for a <b>max</b> and you get the equation for optimal behaviour: the best value of a state is the value of its best action, not its average action.</p><ul><li><b>max<sub>a</sub></b> — assume you pick the single best action here.</li><li><b>R(s,a) + γ Σ<sub>s′</sub> P(s′|s,a) V*(s′)</b> — its reward plus the discounted optimal value of where it leads.</li></ul><p>Its unique solution is V*, and acting greedily with respect to V* (or Q*) is optimal. It is a fixed point of a γ-contraction operator, so repeatedly applying the right-hand side is guaranteed to converge — which is exactly what value iteration does.</p>",
+    "Advantage":"<p>The <b>advantage</b> says how much better one action is than the state's average, by subtracting the baseline V from Q.</p><ul><li><b>Q(s,a)</b> — value of taking this particular action.</li><li><b>V(s)</b> — value of just following the policy (the action-average).</li><li><b>A = Q − V</b> — positive = better than average, negative = worse.</li></ul><p>A raw policy gradient weights actions by the return, which mixes 'this action was good' with 'this state happens to be valuable' and is very noisy. Subtracting V removes the second part — the part you cannot change — leaving only how good the action was relative to the alternatives. That centring cuts variance without adding bias, which is why the advantage (usually via GAE) drives A2C, TRPO and PPO.</p>",
+    "Policy evaluation":"<p>This turns the Bellman <i>expectation</i> equation into an algorithm: stop trying to solve it in closed form, just apply it as an assignment until the numbers stop changing.</p><ul><li><b>V<sub>k+1</sub>(s) ←</b> — overwrite the old estimate with…</li><li><b>the full Bellman backup</b> — reward plus discounted average of the current successor estimates.</li></ul><p>Each sweep makes the estimates more self-consistent, and because the operator is a γ-contraction the error shrinks by a factor of γ every sweep — so it provably converges to the true V of that fixed policy. This is the 'evaluate' half of policy iteration; you need trustworthy values before you can safely improve the policy.</p>",
+    "Policy improvement":"<p>Given accurate values for the current policy, build a strictly better one by acting <b>greedily</b>.</p><ul><li><b>argmax<sub>a</sub></b> — in each state pick the action with the highest…</li><li><b>R(s,a) + γ Σ<sub>s′</sub> P(s′|s,a) V<sub>π</sub>(s′)</b> — one-step lookahead using the current policy's values.</li></ul><p>The policy-improvement theorem guarantees the greedy policy is at least as good everywhere, and strictly better somewhere unless it was already optimal. Alternating this with policy evaluation is <i>policy iteration</i>, which reaches the optimal policy in finitely many rounds for a finite MDP.</p>",
+    "Value iteration":"<p>Policy iteration waits for evaluation to fully converge before improving. Value iteration refuses to wait, folding both into one backup via the <b>max</b>.</p><ul><li><b>max<sub>a</sub></b> — improvement and evaluation in a single stroke.</li><li><b>R + γ Σ<sub>s′</sub> P V<sub>k</sub></b> — one-step optimal lookahead on the current estimates.</li></ul><p>Each sweep is one Bellman-optimality backup and the estimates converge to V*; reading off the greedy action then gives the optimal policy. In practice a good policy usually emerges well before the values have fully settled.</p>",
+    "MC value":"<p><b>Monte Carlo</b> learning at its simplest: play a whole episode, see the actual return that followed a state, and nudge the estimate toward it.</p><ul><li><b>G</b> — the real return observed from this state to the episode's end.</li><li><b>G − V(s)</b> — the gap between what happened and what you predicted.</li><li><b>α</b> — how far to move toward the new evidence.</li></ul><p>No model, no bootstrapping — it learns from completed experience, so the target is a real return and the method is <i>unbiased</i>. The price is high variance (a return depends on every random step until the end) and the need to wait for the episode to finish, so it only suits episodic tasks.</p>",
+    "MC control (on-policy)":"<p>The control version of Monte Carlo: estimate Q so you can compare actions, and improve the policy as you sample.</p><ul><li><b>Q(s,a) ← Q(s,a) + α(G − Q)</b> — average observed returns into the action values.</li><li><b>ε-greedy</b> — mostly act greedily, but explore with probability ε.</li></ul><p>You cannot go fully greedy: untried actions would never get a return, so you would never learn they are better. Keeping ε &gt; 0 forces exploration; annealing ε toward 0 (the GLIE condition — greedy in the limit with infinite exploration) lets the policy converge to optimal while still having explored enough on the way.</p>",
+    "MC off-policy":"<p>Off-policy Monte Carlo evaluates a <b>target policy π</b> using episodes generated by a different <b>behavior policy b</b> — for example learning the greedy policy from exploratory data.</p><ul><li><b>ρ</b> — the importance ratio: the product along the trajectory of π(a|s) ÷ b(a|s).</li><li><b>ρ · G</b> — the observed return reweighted as if π had produced it.</li></ul><p>Multiplying by ρ corrects for the two policies choosing differently. It is unbiased, but a product of ratios can blow up or vanish, so variance can be brutal — which is precisely why weighted and per-decision importance sampling, V-trace and Retrace exist to tame ρ.</p>",
+    "TD error":"<p>The <b>TD error</b> δ is the most important single quantity in reinforcement learning: the surprise, the gap between what just happened and what you expected.</p><ul><li><b>r + γ V(s′)</b> — the fresh one-step estimate of the return (reward now plus discounted value of where you landed).</li><li><b>V(s)</b> — your old prediction.</li><li><b>δ = new − old</b> — positive = better than expected, negative = worse.</li></ul><p>Every TD method is essentially 'nudge the estimate a little in the direction of δ', and the same δ drives actor-critic policy updates. Strikingly, δ also tracks the firing of dopamine neurons, making it one of the deepest links between reinforcement learning and neuroscience.</p>",
+    "TD(0)":"<p>TD(0) applies the TD error to a value function, updating after every <i>single</i> step instead of waiting for the episode to end.</p><ul><li><b>r + γ V(s′)</b> — bootstrap: use the current next-state estimate as a stand-in for the rest of the return.</li><li><b>− V(s)</b>, scaled by <b>α</b> — correct the old estimate toward that target.</li></ul><p>Bootstrapping off its own estimates lets it work online and on endless tasks, with far lower variance than Monte Carlo (each update depends on one random step, not the whole future). The trade is some bias while estimates are still wrong — but TD typically learns much faster than MC in practice.</p>",
+    "n-step return":"<p>Why pick between one-step TD and full Monte Carlo when you can dial between them? The <b>n-step return</b> uses real rewards for n steps, then bootstraps.</p><ul><li><b>r + γr + … (n real rewards)</b> — actual observed rewards, each discounted more than the last.</li><li><b>+ γ<sup>n</sup> V(s at step n)</b> — bootstrap with the value estimate n steps later.</li></ul><p>Small n leans on the (possibly wrong) value estimate — low variance, more bias; large n leans on real rewards — low bias, high variance. n is the bias–variance dial, and intermediate values (often 3–5) routinely beat both extremes.</p>",
+    "SARSA":"<p><b>SARSA</b> is on-policy TD control, and its name is its update — the tuple (State, Action, Reward, next State, next Action).</p><ul><li><b>Q(s′,a′)</b> — the value of the action the policy <i>actually takes</i> next.</li><li><b>r + γ Q(s′,a′) − Q(s,a)</b>, times α — the TD error on action values.</li></ul><p>Because the target uses the action the exploring policy really chose, SARSA learns the value of the policy <i>including its own exploration</i>. The classic consequence is cliff-walking: SARSA learns a safe path away from the edge, since its random steps sometimes fall off and it prices in that risk. It is the cautious, realistic sibling of Q-learning.</p>",
+    "Expected SARSA":"<p>Expected SARSA strips one source of noise from SARSA: rather than sampling the next action, it takes the <b>expectation</b> over all next actions under the policy.</p><ul><li><b>Σ<sub>a′</sub> π(a′|s′) Q(s′,a′)</b> — the policy-weighted average of next action values.</li></ul><p>The sampled a′ in plain SARSA adds variance for no benefit; averaging it out keeps the identical on-policy target in expectation but makes each update less noisy, usually permitting a larger learning rate. The only cost is summing over actions — trivial for small discrete sets. (Q-learning is the special case where that averaging policy is greedy, giving the max.)</p>",
+    "Q-learning":"<p><b>Q-learning</b> is off-policy TD control and the most influential value-based algorithm. Everything hinges on its target.</p><ul><li><b>max<sub>a′</sub> Q(s′,a′)</b> — the value of the <i>best</i> next action, no matter what the agent actually did.</li></ul><p>By assuming optimal future behaviour, it estimates Q* directly and converges to the optimal action values regardless of how exploratory the behavior policy is (as long as it keeps trying everything). Decoupling 'how you act' from 'what you learn' is the essence of off-policy. Wrap Q in a neural network with a replay buffer and a target network and this exact rule becomes DQN — the algorithm that first solved Atari from pixels.</p>",
+    "Double Q":"<p>Q-learning has a quiet, systematic flaw: the same noisy estimates both <i>pick</i> the best next action (the argmax) and <i>score</i> it (the max). Noise that lifts an action gets selected <i>and</i> believed, so values drift upward.</p><ul><li><b>Q<sub>A</sub></b> chooses the next action (argmax).</li><li><b>Q<sub>B</sub></b> evaluates that chosen action.</li></ul><p>Keeping two independent value functions — one to select, one to judge — breaks the bias, because the selector's lucky noise is unlikely to be lucky in the evaluator too. Double DQN carries the same fix into deep RL, improving both stability and final scores.</p>",
+    "TD(λ)":"<p>TD(λ) unifies all the n-step returns into one online algorithm using <b>eligibility traces</b>.</p><ul><li><b>e(s)</b> — a trace that spikes when a state is visited and decays by γλ each step, marking 'recently responsible' states.</li><li><b>V(s) ← V(s) + α δ e(s)</b> — a single TD error updates <i>every</i> state in proportion to its trace.</li></ul><p>λ sets the decay: λ=0 collapses to one-step TD(0), λ=1 recovers Monte Carlo, and values between blend them — usually beating either endpoint. Traces give the multi-step credit assignment of large-n returns without storing the future, in one backward pass.</p>",
+    "DQN loss":"<p>DQN reframes Q-learning as supervised regression: train a network so its predicted Q matches the bootstrapped target, minimising the squared TD error.</p><ul><li><b>r + γ max<sub>a′</sub> Q(s′,a′; θ<sup>−</sup>)</b> — the target, computed with a frozen <b>target network</b> θ<sup>−</sup>.</li><li><b>Q(s,a; θ)</b> — the online network's prediction being trained.</li><li><b>squared difference</b>, averaged over the replay buffer.</li></ul><p>Two tricks make naïve neural Q-learning actually work: the <b>replay buffer</b> samples past transitions at random, breaking the heavy correlation between consecutive frames; and the <b>target network</b> is a slow copy of the weights that holds the target still, so the network isn't chasing a target that jumps every gradient step. Drop either and training tends to diverge.</p>",
+    "Double DQN target":"<p>The deep version of Double Q-learning, changing only how the target's next-action value is formed.</p><ul><li><b>argmax with the online network θ</b> — choose the best next action.</li><li><b>evaluate it with the target network θ<sup>−</sup></b> — score that action.</li></ul><p>Plain DQN uses the target network for both roles and so inherits Q-learning's overestimation. Splitting selection from evaluation across the two networks costs nothing extra (both already exist) and reliably reduces the upward value bias, giving more accurate values and stronger policies.</p>",
+    "Dueling":"<p>The dueling architecture changes the <i>network</i>, not the learning rule: split the head into two streams and recombine into Q.</p><ul><li><b>V(s)</b> — one stream estimates how good the state is overall.</li><li><b>A(s,a)</b> — the other estimates each action's relative advantage.</li><li><b>Q = V + A − mean(A)</b> — recombine, subtracting the mean advantage so the decomposition is identifiable.</li></ul><p>In many states the action barely matters, and learning a separate Q per action wastes data. Sharing one V across all actions lets the network learn a state's worth from <i>every</i> action taken there, which speeds learning most where actions are near-equivalent.</p>",
+    "Distributional Bellman":"<p>Ordinary value methods predict the <i>mean</i> return; distributional RL predicts the whole <b>distribution</b> Z(s,a), turning the Bellman equation into a statement about distributions.</p><ul><li><b>Z(s,a)</b> — a random variable, not a single number.</li><li><b>r + γ Z(s′,a′)</b> — the next distribution shifted by the reward and squeezed toward zero by γ.</li><li><b>equality in distribution</b> — the two random variables match in law, not value-by-value.</li></ul><p>Learning the full shape gives a much richer training signal (the network must get the distribution right, not just its average), which empirically improves results even though the agent still acts on the mean. C51, QR-DQN and IQN are different representations of Z, and distributional learning is one ingredient of Rainbow.</p>",
+    "PG theorem":"<p>The <b>policy gradient theorem</b> is what makes directly optimising a policy possible: it writes the gradient of expected return in a form you can estimate from samples.</p><ul><li><b>∇<sub>θ</sub> log π(a|s)</b> — the score: which way to push the parameters to make this action more likely.</li><li><b>G</b> — how good the outcome was, used as the weight.</li><li><b>E</b> — average over trajectories the policy generates.</li></ul><p>The crucial feature is what's <i>missing</i>: no gradient of the environment dynamics. You never differentiate through the unknown transition model, so you can optimise from samples alone. Intuitively: make actions that led to high return more likely, and ones that led to low return less likely — gradient ascent on 'do more of what worked'.</p>",
+    "REINFORCE":"<p>REINFORCE is the policy gradient theorem turned into the simplest algorithm.</p><ul><li><b>∇<sub>θ</sub> log π(a|s)</b> — push the parameters to make the taken action more likely.</li><li><b>(G − b(s))</b> — scaled by the return minus a baseline.</li></ul><p>Without the baseline, every action in a high-reward episode gets reinforced — even the bad ones — purely because the total was high, which is enormous variance. Subtracting a baseline b(s) ≈ V(s) (so the weight becomes the advantage) leaves the gradient's expectation unchanged (no bias) yet sharply lowers variance. REINFORCE is seldom used raw now, but it is the conceptual seed of every actor-critic method.</p>",
+    "Actor-critic":"<p>Actor-critic fuses the two families: a policy (the <b>actor</b>) and a value function (the <b>critic</b>) trained together.</p><ul><li><b>actor π(a|s)</b> — chooses actions, updated by the policy gradient.</li><li><b>critic (value)</b> — estimates state values and supplies the TD error δ.</li><li><b>δ replaces the return</b> as the actor's signal.</li></ul><p>REINFORCE weights by the noisy full return; actor-critic swaps in the critic's δ — a one-step bootstrapped advantage — which has far lower variance and lets the actor update every step instead of once per episode. The cost is a little bias from an imperfect critic: the same bargain TD makes against MC, now applied to policy learning. Almost every modern deep-RL method (A2C, PPO, SAC…) is an actor-critic.</p>",
+    "GAE":"<p>Generalised Advantage Estimation answers 'how should the critic estimate the advantage?' by blending all the n-step versions with a decay λ.</p><ul><li><b>δ<sub>t+l</sub></b> — the TD error l steps ahead.</li><li><b>(γλ)<sup>l</sup></b> — exponentially decaying weights summed over the future.</li></ul><p>It is exactly TD(λ) applied to the advantage. λ=0 uses only the one-step TD error (low variance, biased by the critic); λ=1 uses the full Monte Carlo advantage (unbiased, high variance); values around 0.95 strike the balance. GAE is the standard advantage feeding TRPO and PPO and a big reason they train stably.</p>",
+    "TRPO":"<p>A naïve policy step can look good locally yet collapse the policy, because the data came from the <i>old</i> policy and stops being valid once the policy moves too far. TRPO blocks this with a hard <b>trust region</b>.</p><ul><li><b>maximise the importance-weighted advantage</b> — improve as much as the data supports.</li><li><b>subject to KL(π<sub>old</sub> ‖ π<sub>θ</sub>) ≤ δ</b> — but don't let the new policy drift more than δ from the old one.</li></ul><p>Constraining the average KL keeps each update both improving and safe, giving near-monotonic progress. The cost is heavy: enforcing the constraint needs second-order (Fisher-matrix) information — the very thing PPO was designed to avoid.</p>",
+    "PPO":"<p>PPO keeps TRPO's 'don't move too far' principle but enforces it with a cheap first-order trick: <b>clip</b> the probability ratio so the objective stops rewarding big moves.</p><ul><li><b>r<sub>t</sub>(θ) = π<sub>θ</sub>(a<sub>t</sub>|s<sub>t</sub>) ÷ π<sub>old</sub>(a<sub>t</sub>|s<sub>t</sub>)</b> — how much more likely the new policy makes the action actually taken at step t.</li><li><b>Â<sub>t</sub></b> — that action's advantage (usually GAE): did it beat the average?</li><li><b>clip(r<sub>t</sub>, 1−ε, 1+ε)</b> — pin the ratio to a small band (ε ≈ 0.2).</li><li><b>min(r<sub>t</sub>·Â<sub>t</sub>, clipped·Â<sub>t</sub>)</b> — take the pessimistic option, killing the incentive to push r<sub>t</sub> past the band.</li><li><b>𝔼 over a<sub>t</sub> ~ π<sub>old</sub>(·|s<sub>t</sub>)</b> — the expectation is taken over actions a<sub>t</sub> drawn from the old policy in each state s<sub>t</sub>; in practice it is the empirical mean over the batch of (s<sub>t</sub>, a<sub>t</sub>) timesteps collected by running π<sub>old</sub>.</li></ul><p>No constraint, no second-order math — just a clipped objective optimised with ordinary SGD for a few epochs per batch. It is simple, robust across an enormous range of tasks, and is the algorithm behind most continuous-control results and the RLHF stage of modern chat models.</p>",
+    "GRPO":"<p>GRPO is PPO with the critic deleted — handy for language models, where a good value network is hard to train. It estimates the advantage from a <b>group</b> of samples.</p><ul><li><b>sample G responses</b> to the same prompt, giving returns R(τ<sub>1</sub>), …, R(τ<sub>G</sub>).</li><li><b>A<sub>i</sub> = (R(τ<sub>i</sub>) − mean{R(τ)}) ÷ std{R(τ)}</b> — standardise each return within the group: above-average responses get positive advantage, below-average negative. This group baseline replaces the critic.</li><li><b>Σ over the group, PPO-style clip</b> — apply the clipped-ratio objective to every sample, under the same expectation 𝔼 over a<sub>t</sub> ~ π<sub>old</sub>(·|s<sub>t</sub>) as PPO.</li></ul><p>Using the group's own mean as the baseline removes the need for a learned critic entirely. Implementations usually also add a KL penalty β·KL(π<sub>θ</sub> ‖ π<sub>ref</sub>) to a frozen reference to stop the model drifting (the form above, matching the slide, omits it). It is the method behind DeepSeek-R1's reasoning training.</p>",
+    "DDPG":"<p>Policy gradients usually need a stochastic policy; DDPG extends them to a <b>deterministic</b> actor for continuous control by pushing the actor wherever the critic's Q increases.</p><ul><li><b>∇<sub>a</sub> Q</b> — how the critic's value changes as you nudge the action.</li><li><b>∇<sub>θ</sub> μ</b> — how the action changes as you nudge the actor.</li><li><b>chain them</b> — move the actor toward higher-valued actions.</li></ul><p>It is off-policy with a replay buffer and sample-efficient — essentially DQN's ideas carried into continuous action spaces with an explicit actor. The catch is fragility: it inherits Q-learning's overestimation and is notoriously hyperparameter-sensitive, which is exactly what TD3 fixes.</p>",
+    "TD3 target":"<p>TD3 — 'Twin Delayed DDPG' — is three fixes for DDPG's instability, summarised by its target.</p><ul><li><b>min(Q<sub>1</sub>, Q<sub>2</sub>)</b> — twin critics; take the smaller value to curb overestimation.</li><li><b>μ(s′) + ε</b> — target-policy smoothing; add noise so the critic can't exploit sharp peaks in Q.</li><li><b>delayed actor updates</b> — update the policy less often than the critics, chasing a steadier target.</li></ul><p>The twin-critic minimum is the headline: train two critics and always trust the more pessimistic one, and the systematic upward bias that destabilises DDPG is suppressed. Together the three tricks make TD3 a much more reliable deterministic continuous-control method.</p>",
+    "SAC":"<p>Soft Actor-Critic optimises a different objective: maximise reward <i>plus</i> the policy's <b>entropy</b>, so the agent is paid to stay as random as it can while still doing well.</p><ul><li><b>r(s,a)</b> — the usual reward.</li><li><b>α · H(π)</b> — an entropy bonus; α sets how much exploration is worth.</li></ul><p>Rewarding entropy buys several things at once: built-in exploration (no hand-tuned noise schedule), robustness (the agent keeps several good ways to act rather than committing early), and smoother optimisation. With off-policy replay and twin critics (the TD3 trick), SAC is sample-efficient and stable — a default choice for continuous control today.</p>"
+  };
+  var eqWhy={
+    "Return":"<p>The <b>return</b> \\(G_t\\) is the one quantity RL exists to maximise — not the next reward, but the whole stream of future rewards, each discounted more the further away.</p><ul><li>\\(r_{t+k+1}\\) — the reward \\(k\\) steps ahead.</li><li>\\(\\gamma\\in[0,1]\\) — the discount; a reward \\(k\\) steps away is weighted \\(\\gamma^k\\).</li><li>\\(\\sum_{k\\ge 0}\\) — sum the whole discounted series.</li></ul><p>\\(\\gamma\\) sets how far-sighted the agent is and makes the infinite sum converge. Every value function is an expectation of \\(G_t\\) under some policy.</p>",
+    "Bellman expectation V":"<p>The <b>consistency equation</b> every value function obeys: a state's value is the immediate reward plus the discounted value of the next state — never the whole future.</p><ul><li>\\(\\sum_a \\pi(a\\mid s)\\) — average over the policy's actions.</li><li>\\(R(s,a)\\) — the expected reward.</li><li>\\(\\gamma \\sum_{s'} P(s'\\mid s,a)\\,V_\\pi(s')\\) — discounted next-state value, over the dynamics.</li></ul><p>If your numbers satisfy this everywhere they are exactly \\(V_\\pi\\). DP, Monte Carlo and TD are three ways of solving it.</p>",
+    "Bellman expectation Q":"<p>The same idea anchored to a state and a first action: take \\(a\\) now, then follow \\(\\pi\\).</p><ul><li>\\(R(s,a)\\) — reward for committing to \\(a\\).</li><li>\\(\\gamma \\sum_{s'} P(s'\\mid s,a)\\) — discounted, over next states.</li><li>\\(\\sum_{a'} \\pi(a'\\mid s')\\,Q_\\pi(s',a')\\) — next-state value, over the policy's next action.</li></ul><p>\\(Q\\) already encodes the 'what if I do \\(a\\)' comparison, so greedy control is just \\(\\argmax_a Q(s,a)\\) — no model needed.</p>",
+    "Bellman optimality":"<p>Swap the policy-average for a <b>max</b> and you describe optimal behaviour.</p><ul><li>\\(\\max_a\\) — assume you pick the best action.</li><li>\\(R(s,a)+\\gamma\\sum_{s'}P(s'\\mid s,a)\\,V^\\ast(s')\\) — its reward plus discounted optimal next value.</li></ul><p>Its unique solution is \\(V^\\ast\\); acting greedily on \\(V^\\ast\\) (or \\(Q^\\ast\\)) is optimal. It is a contraction fixed point, so iterating it converges — that is value iteration.</p>",
+    "Advantage":"<p>The <b>advantage</b> measures how much better an action is than the state's average.</p><ul><li>\\(Q(s,a)\\) — value of this action.</li><li>\\(V(s)\\) — value of the average action.</li><li>\\(A=Q-V\\) — positive means better than average.</li></ul><p>Centring the signal removes the part you cannot change (how good the state is), leaving only how good the action was — which cuts policy-gradient variance without bias.</p>",
+    "Policy evaluation":"<p>Turns the Bellman expectation into an update: apply it repeatedly until the values stop changing.</p><ul><li>\\(V_{k+1}(s) \\leftarrow \\sum_a \\pi(a\\mid s)[\\,R(s,a)+\\gamma\\sum_{s'}P(s'\\mid s,a)V_k(s')\\,]\\) — the full Bellman backup.</li></ul><p>The operator is a \\(\\gamma\\)-contraction, so the error shrinks by \\(\\gamma\\) each sweep and \\(V_k \\to V_\\pi\\). This is the 'evaluate' half of policy iteration.</p>",
+    "Policy improvement":"<p>Given accurate values, build a better policy by acting greedily.</p><ul><li>\\(\\pi'(s)=\\argmax_a[\\,R(s,a)+\\gamma\\sum_{s'}P(s'\\mid s,a)V_\\pi(s')\\,]\\) — one-step lookahead.</li></ul><p>The policy-improvement theorem guarantees \\(\\pi'\\) is at least as good everywhere. Alternating with evaluation is policy iteration, which reaches \\(\\pi^\\ast\\) in finitely many rounds.</p>",
+    "Value iteration":"<p>Folds evaluation and improvement into one backup using the <b>max</b>.</p><ul><li>\\(V_{k+1}(s)\\leftarrow \\max_a[\\,R(s,a)+\\gamma\\sum_{s'}P(s'\\mid s,a)V_k(s')\\,]\\)</li></ul><p>Each sweep is a Bellman-optimality backup and \\(V_k\\to V^\\ast\\); the greedy policy is then optimal. A good policy often appears before the values fully converge.</p>",
+    "MC value":"<p><b>Monte Carlo</b>: after an episode, nudge a state's value toward the actual return that followed.</p><ul><li>\\(G_t\\) — the real observed return.</li><li>\\(G_t - V(s_t)\\) — prediction error.</li><li>\\(\\alpha\\) — step size.</li></ul><p>No model, no bootstrapping — the target is a real return, so it is <i>unbiased</i> but high-variance and needs episodes to end.</p>",
+    "MC control (on-policy)":"<p>Estimate \\(Q\\) to compare actions, improve while sampling.</p><ul><li>\\(Q(s_t,a_t)\\leftarrow Q(s_t,a_t)+\\alpha(G_t-Q(s_t,a_t))\\) — average returns into \\(Q\\).</li><li>\\(\\varepsilon\\)-greedy — explore with probability \\(\\varepsilon\\).</li></ul><p>Going fully greedy would starve untried actions of returns. Annealing \\(\\varepsilon\\to 0\\) (GLIE) converges to the optimal policy.</p>",
+    "MC off-policy":"<p>Evaluate target \\(\\pi\\) from data generated by behavior \\(b\\).</p><ul><li>\\(\\rho_t=\\prod_k \\tfrac{\\pi(a_k\\mid s_k)}{b(a_k\\mid s_k)}\\) — importance ratio along the trajectory.</li><li>\\(\\rho_t\\,G_t\\) — the return reweighted as if \\(\\pi\\) produced it.</li></ul><p>Unbiased, but products of ratios can explode, so variance can be brutal — hence weighted IS, V-trace, Retrace.</p>",
+    "TD error":"<p>The <b>TD error</b> \\(\\delta_t\\) is the surprise: observed minus predicted.</p><ul><li>\\(r_{t+1}+\\gamma V(s_{t+1})\\) — the new one-step estimate.</li><li>\\(V(s_t)\\) — the old prediction.</li><li>\\(\\delta_t=\\) new \\(-\\) old.</li></ul><p>Every TD method is 'nudge toward \\(\\delta\\)'. The same \\(\\delta\\) drives actor-critic updates and tracks dopamine firing in the brain.</p>",
+    "TD(0)":"<p>Apply the TD error to a value after a single step.</p><ul><li>\\(r_{t+1}+\\gamma V(s_{t+1})\\) — bootstrap with the next-state estimate.</li><li>scaled by \\(\\alpha\\) toward that target.</li></ul><p>Works online and on endless tasks, with far lower variance than MC (one random step, not the whole future) at the cost of some bias.</p>",
+    "n-step return":"<p>A dial between TD(0) and Monte Carlo.</p><ul><li>\\(r_{t+1}+\\cdots+\\gamma^{n-1}r_{t+n}\\) — \\(n\\) real rewards.</li><li>\\(+\\,\\gamma^n V(s_{t+n})\\) — bootstrap after \\(n\\) steps.</li></ul><p>Small \\(n\\): low variance, more bias; large \\(n\\): low bias, high variance. \\(n\\) is the bias–variance knob.</p>",
+    "SARSA":"<p><b>On-policy</b> TD control — the tuple \\((s_t,a_t,r_{t+1},s_{t+1},a_{t+1})\\).</p><ul><li>\\(Q(s_{t+1},a_{t+1})\\) — value of the action the policy <i>actually takes</i> next.</li></ul><p>It learns the value of the policy it follows, including exploration, so near a cliff it learns a cautious path — its random steps sometimes fall off and it prices that in.</p>",
+    "Expected SARSA":"<p>Replace the sampled next action with the expectation over the policy.</p><ul><li>\\(\\sum_{a'}\\pi(a'\\mid s_{t+1})Q(s_{t+1},a')\\) — policy-weighted average of next values.</li></ul><p>Same on-policy target as SARSA but lower variance (no sampled \\(a'\\)), usually allowing a larger \\(\\alpha\\). Q-learning is the special case where that policy is greedy.</p>",
+    "Q-learning":"<p>Off-policy TD control; everything hinges on the target.</p><ul><li>\\(\\max_{a'} Q(s_{t+1},a')\\) — value of the <i>best</i> next action, whatever the agent did.</li></ul><p>It estimates \\(Q^\\ast\\) directly from any exploratory data. Add a network, replay buffer and target net and it becomes DQN.</p>",
+    "Double Q":"<p>Plain Q-learning's \\(\\max\\) both selects and scores the next action with the same noisy estimates, so it overestimates.</p><ul><li>\\(a^\\ast=\\argmax_{a'}Q_A(s',a')\\) — one function selects.</li><li>\\(Q_B(s',a^\\ast)\\) — the other evaluates.</li></ul><p>Splitting selection from evaluation breaks the upward bias. Double DQN brings this to deep RL.</p>",
+    "TD(λ)":"<p>Unifies all \\(n\\)-step returns online via <b>eligibility traces</b>.</p><ul><li>\\(e_t(s)=\\gamma\\lambda\\,e_{t-1}(s)+\\mathbf{1}[s=s_t]\\) — a fading 'recently visited' marker.</li><li>\\(V(s)\\leftarrow V(s)+\\alpha\\,\\delta_t\\,e_t(s)\\) — one \\(\\delta\\) updates every state.</li></ul><p>\\(\\lambda=0\\) is TD(0), \\(\\lambda=1\\) is Monte Carlo; in between blends them, usually beating both.</p>",
+    "DQN loss":"<p>Q-learning as regression: minimise the squared TD error of a network.</p><ul><li>\\(r+\\gamma\\max_{a'}Q_{\\theta^-}(s',a')\\) — target from a frozen <b>target network</b> \\(\\theta^-\\).</li><li>\\(Q_\\theta(s,a)\\) — the trained prediction.</li></ul><p>The <b>replay buffer</b> decorrelates samples and the <b>target network</b> holds the target still; remove either and training tends to diverge.</p>",
+    "Double DQN target":"<p>Double Q in deep RL, changing only the target.</p><ul><li>\\(\\argmax_{a'}Q_\\theta(s',a')\\) — online net selects.</li><li>\\(Q_{\\theta^-}(s',\\cdot)\\) — target net evaluates it.</li></ul><p>Plain DQN uses one net for both and inherits the overestimation; splitting them costs nothing and reduces the bias.</p>",
+    "Dueling":"<p>Changes the network, not the rule: two streams recombined.</p><ul><li>\\(V(s)\\) — state value stream.</li><li>\\(A(s,a)\\) — advantage stream.</li><li>\\(Q=V+A-\\tfrac{1}{|\\mathcal{A}|}\\sum_{a'}A(s,a')\\) — recombine, mean-subtracted to be identifiable.</li></ul><p>Sharing one \\(V\\) lets the net learn a state's worth from every action taken there.</p>",
+    "Distributional Bellman":"<p>Predict the whole return <b>distribution</b> \\(Z(s,a)\\), not just its mean.</p><ul><li>\\(r+\\gamma Z(s',a')\\) — shift by reward, scale by \\(\\gamma\\).</li><li>\\(\\overset{D}{=}\\) — equality in distribution.</li></ul><p>The richer target stabilises learning; the agent still acts on \\(\\mathbb{E}[Z]\\). C51, QR-DQN and IQN represent \\(Z\\) differently.</p>",
+    "PG theorem":"<p>The foundation of policy-gradient methods.</p><ul><li>\\(\\nabla_\\theta \\log \\pi_\\theta(a_t\\mid s_t)\\) — the score: how to make this action likelier.</li><li>\\(G_t\\) — weight by the return.</li></ul><p>No gradient of the environment appears, so you can optimise from samples alone: increase \\(\\log\\pi\\) of actions that led to high return.</p>",
+    "REINFORCE":"<p>The simplest policy gradient.</p><ul><li>\\(\\nabla_\\theta \\log \\pi_\\theta(a_t\\mid s_t)\\) — make the taken action likelier.</li><li>\\((G_t-b(s_t))\\) — weighted by return minus a baseline.</li></ul><p>Subtracting \\(b(s)\\approx V(s)\\) (so the weight is the advantage) keeps the gradient unbiased but sharply lowers variance.</p>",
+    "Actor-critic":"<p>An actor \\(\\pi_\\theta\\) and a critic \\(V_w\\) trained together.</p><ul><li>\\(\\delta_t=r_{t+1}+\\gamma V_w(s_{t+1})-V_w(s_t)\\) — the critic's TD error.</li><li>\\(\\theta \\mathrel{+}= \\alpha_\\theta\\,\\delta_t\\,\\nabla_\\theta \\log \\pi_\\theta\\) — \\(\\delta\\) replaces the noisy return.</li></ul><p>Lower variance than REINFORCE and online updates, at the cost of a little critic bias.</p>",
+    "GAE":"<p>Builds the advantage from an exponentially-weighted sum of TD errors.</p><ul><li>\\(\\hat{A}_t=\\sum_{l\\ge 0}(\\gamma\\lambda)^l\\,\\delta_{t+l}\\)</li></ul><p>It is TD(\\(\\lambda\\)) for the advantage: \\(\\lambda=0\\) trusts the critic (low variance, biased), \\(\\lambda=1\\) is the MC advantage (unbiased, noisy), \\(\\lambda\\approx 0.95\\) balances. It feeds TRPO and PPO.</p>",
+    "TRPO":"<p>Take the largest improving step that stays inside a KL <b>trust region</b>.</p><ul><li>maximise \\(\\mathbb{E}[\\tfrac{\\pi_\\theta}{\\pi_{\\theta_{\\text{old}}}}\\hat{A}_t]\\) — improve as the data supports.</li><li>subject to \\(\\mathbb{E}[\\mathrm{KL}(\\pi_{\\theta_{\\text{old}}}\\Vert\\pi_\\theta)]\\le\\delta\\) — don't drift too far.</li></ul><p>Near-monotonic improvement, but enforcing the constraint needs second-order (Fisher) information — what PPO avoids.</p>",
+    "PPO":"<p>TRPO's principle with a cheap first-order <b>clip</b>.</p><ul><li>\\(r_t(\\theta)=\\tfrac{\\pi_\\theta(a_t\\mid s_t)}{\\pi_{\\theta_{\\text{old}}}(a_t\\mid s_t)}\\) — new-vs-old likelihood of the taken action.</li><li>\\(\\hat{A}_t\\) — its advantage (usually GAE).</li><li>\\(\\mathrm{clip}(r_t,1-\\epsilon,1+\\epsilon)\\) — pin the ratio to a band (\\(\\epsilon\\approx 0.2\\)).</li><li>\\(\\min(\\cdot)\\) — take the pessimistic option, killing the push past the band.</li><li>\\(\\mathbb{E}_{a_t\\sim\\pi_{\\theta_{\\text{old}}}(\\cdot\\mid s_t)}\\) — average over actions drawn from the old policy (the rollout batch).</li></ul><p>No constraint, no second-order math — a clipped objective optimised with ordinary SGD. The workhorse of continuous control and RLHF.</p>",
+    "GRPO":"<p>PPO with the critic deleted — the advantage comes from a <b>group</b> of samples.</p><ul><li>sample \\(G\\) responses with returns \\(R(\\tau_1),\\dots,R(\\tau_G)\\).</li><li>\\(A_i=\\dfrac{R(\\tau_i)-\\mathrm{mean}\\{R(\\tau)\\}}{\\mathrm{std}\\{R(\\tau)\\}}\\) — standardise within the group; this replaces the critic.</li><li>\\(\\sum_{i=1}^{G}\\) of the PPO-style clipped term, under the same \\(\\mathbb{E}_{a_t\\sim\\pi_{\\theta_{\\text{old}}}}\\).</li></ul><p>The group mean is the baseline. Real implementations usually add \\(\\beta\\,\\mathrm{KL}(\\pi_\\theta\\Vert\\pi_{\\text{ref}})\\) to a frozen reference (the slide form omits it). It trained DeepSeek-R1.</p>",
+    "DDPG":"<p>Policy gradient for a <b>deterministic</b> actor in continuous control.</p><ul><li>\\(\\nabla_a Q(s,a)\\big|_{a=\\mu_\\theta(s)}\\) — how value changes with the action.</li><li>\\(\\nabla_\\theta \\mu_\\theta(s)\\) — how the action changes with \\(\\theta\\).</li><li>chain rule — push the actor toward higher-valued actions.</li></ul><p>Off-policy with replay; sample-efficient but overestimation-prone and hyperparameter-sensitive — what TD3 fixes.</p>",
+    "TD3 target":"<p>Three fixes for DDPG, shown in its target.</p><ul><li>\\(\\min_{i=1,2}Q_{\\theta_i^-}\\) — twin critics; the minimum curbs overestimation.</li><li>\\(\\mu(s')+\\epsilon\\) — target-policy smoothing.</li><li>delayed actor updates — chase a steadier target.</li></ul><p>Trusting the more pessimistic of two critics suppresses the bias that destabilises DDPG.</p>",
+    "SAC":"<p>Maximise reward <i>plus</i> policy <b>entropy</b>.</p><ul><li>\\(r(s_t,a_t)\\) — the usual reward.</li><li>\\(\\alpha\\,\\mathcal{H}(\\pi(\\cdot\\mid s_t))\\) — entropy bonus; \\(\\alpha\\) weights exploration.</li></ul><p>Rewarding entropy gives built-in exploration, robustness, and smoother optimisation. With off-policy replay and twin critics it is a top continuous-control method.</p>"
+  };
+  var eqEl=document.getElementById("tab-eq");
+  var ehtml='<div class="hint">Every update rule, side by side, in one notation. Click <b>Explain</b> on any equation for a thorough walk-through.</div>';
+  eqGroups.forEach(function(g){
+    ehtml+='<div class="grp"><span class="dotc" style="background:'+cats[g.cat].dot+'"></span>'+g.name+'</div>';
+    g.rows.forEach(function(r){
+      var why=eqWhy[r[0]]||"";
+      ehtml+='<div class="eq-item">'+
+        '<div class="eqrow"><div class="rname">'+r[0]+' <span class="tag">· '+r[2]+'</span>'+
+        (why?'<button class="eq-explain" type="button"><i class="ti ti-bulb" aria-hidden="true"></i>Explain</button>':'')+
+        '</div><div class="eqbox">'+M(r[1],true)+'</div></div>'+
+        (why?'<div class="eq-why"><div class="ndetail-text">'+why+'</div></div>':'')+
+        '</div>';
+    });
+  });
+  eqEl.innerHTML=ehtml;
+  eqEl.addEventListener("click",function(e){
+    var btn=e.target.closest(".eq-explain"); if(!btn) return;
+    var item=btn.closest(".eq-item"); item.classList.toggle("open");
+    btn.innerHTML = item.classList.contains("open") ? '<i class="ti ti-x" aria-hidden="true"></i>Hide' : '<i class="ti ti-bulb" aria-hidden="true"></i>Explain';
+  });
+
+  var symU={
+    "State":"s, s′", "Action":"a, a′", "Reward":"r, r<sub>t+1</sub>", "Time, horizon":"t, T",
+    "Discount factor":"γ", "Return":"G<sub>t</sub>", "Trajectory":"τ", "State / action space":"S, A",
+    "Dynamics":"p(s′, r | s, a)",
+    "Policy":"π(a | s)", "Parameterised policy":"π<sub>θ</sub>", "Optimal policy":"π*",
+    "Deterministic policy":"μ<sub>θ</sub>(s)", "Behavior policy":"b(a | s)",
+    "Old / reference policy":"π<sub>old</sub>, π<sub>ref</sub>",
+    "State value":"V(s), V<sub>π</sub>(s)", "Optimal state value":"V*(s)", "Critic":"V<sub>w</sub>(s)",
+    "Action value":"Q(s, a), Q<sub>π</sub>", "Optimal action value":"Q*(s, a)",
+    "Online / target Q":"Q<sub>θ</sub>, Q<sub>θ</sub><sup>−</sup>", "Advantage":"A(s, a)",
+    "Advantage estimate":"Â<sub>t</sub>", "Return distribution":"Z(s, a)",
+    "Learning rate":"α", "TD error":"δ<sub>t</sub>", "Trace / GAE decay":"λ",
+    "Eligibility trace":"e<sub>t</sub>(s)", "Explore / clip":"ε", "Parameters":"θ, w",
+    "Gradient":"∇<sub>θ</sub>", "Objective":"J(θ)", "Visit count":"N(s, a)",
+    "Transition model":"P(s′ | s, a)", "Reward model":"R(s, a)", "Learned model":"P&#770;, R&#770;",
+    "Exploration constant":"c", "Node visits":"N(s)",
+    "Expectation":"E[ · ]", "Bellman operator":"<i>T</i>", "KL divergence":"KL(p ‖ q)",
+    "Entropy":"H(π)", "Importance ratio":"ρ<sub>t</sub>", "Indicator":"<b>1</b>[ · ]", "Sampled from":"x ∼ p",
+    "Target params":"θ<sup>−</sup>", "KL weight":"β", "Probability ratio":"r<sub>t</sub>(θ)",
+    "Clipping":"clip( · )", "Dataset":"<i>D</i>", "Elementwise product":"⊙", "Return-to-go":"R&#770;<sub>t</sub>"
+  };
+  var detailRich={
+    "State":"An agent's situation at time \\(t\\). In tabular RL a state is just an index; in deep RL it is a feature vector or an image. \\(s'\\) is shorthand for the next state. A good state captures everything needed to act (the Markov property).",
+    "Action":"The decision taken in a state — discrete (left / right / fire) or continuous (a torque). \\(a'\\) is the action taken in the next state \\(s'\\). The full set of actions is \\(\\mathcal{A}\\).",
+    "Reward":"A single number scoring the last transition. Convention: taking \\(a_t\\) in state \\(s_t\\) yields reward \\(r_{t+1}\\). The agent never optimises \\(r\\) directly — it optimises the discounted sum, the return \\(G_t\\).",
+    "Time, horizon":"\\(t\\) indexes steps within an episode; \\(T\\) is the final step of an episodic task. Continuing tasks set \\(T=\\infty\\), which is why the discount \\(\\gamma\\) is needed to keep the return finite.",
+    "Discount factor":"\\(\\gamma\\in[0,1]\\) sets how far-sighted the agent is: \\(\\gamma\\to 0\\) is myopic, \\(\\gamma\\to 1\\) is patient. It also makes the infinite-horizon return \\(\\sum_{k}\\gamma^k r_{t+k+1}\\) converge.",
+    "Return":"\\(G_t=\\sum_{k\\ge 0}\\gamma^k r_{t+k+1}\\): the discounted sum of all future rewards from time \\(t\\). Monte Carlo uses the observed \\(G_t\\); TD methods estimate it by bootstrapping. Every value function is an expectation of \\(G_t\\).",
+    "Trajectory":"\\(\\tau=(s_0,a_0,r_1,s_1,\\dots)\\), one full rollout produced by running a policy. Policy-gradient methods take expectations over trajectories \\(\\tau\\sim\\pi_\\theta\\).",
+    "State / action space":"\\(\\mathcal{S}\\) is the set of all states, \\(\\mathcal{A}\\) the set of all actions. The size \\(|\\mathcal{A}|\\) appears, for example, in the dueling-network advantage normalisation.",
+    "Dynamics":"\\(p(s',r\\mid s,a)\\) is the complete one-step model: the joint probability of the next state and reward. Knowing it makes a problem model-based; not knowing it makes it model-free.",
+    "Policy":"\\(\\pi(a\\mid s)\\) is the agent's behavior — a distribution over actions per state. Finding the optimal \\(\\pi^\\ast\\) is the goal of control. It may be stochastic or deterministic.",
+    "Parameterised policy":"\\(\\pi_\\theta\\) is a policy with learnable weights \\(\\theta\\) (usually a neural network), optimised by gradient ascent on \\(J(\\theta)\\). The basis of all deep policy-gradient methods.",
+    "Optimal policy":"\\(\\pi^\\ast\\) achieves the maximum value in every state. Acting greedily with respect to \\(Q^\\ast\\), i.e. \\(\\argmax_a Q^\\ast(s,a)\\), yields one such policy.",
+    "Deterministic policy":"\\(\\mu_\\theta(s)\\) outputs a single action rather than a distribution. Used for continuous control in DDPG and TD3, where the gradient flows through the critic \\(Q\\) into the actor \\(\\mu\\).",
+    "Behavior policy":"\\(b(a\\mid s)\\) is the policy that actually collected the data, which may differ from the target \\(\\pi\\). This mismatch defines off-policy learning and is corrected with the importance ratio \\(\\rho_t\\).",
+    "Old / reference policy":"Frozen copies that constrain updates. \\(\\pi_{\\text{old}}\\) is the previous iteration's policy (the PPO ratio's denominator); \\(\\pi_{\\text{ref}}\\) is a fixed anchor a KL penalty keeps the new policy near (RLHF, GRPO).",
+    "State value":"\\(V_\\pi(s)=\\mathbb{E}_\\pi[G_t\\mid s_t=s]\\): the expected return from \\(s\\) under \\(\\pi\\). Answers 'how good is this state?'. The critic learns an approximation of \\(V\\).",
+    "Optimal state value":"\\(V^\\ast(s)\\) is the value of \\(s\\) under an optimal policy — the most return obtainable from \\(s\\). Value iteration computes it by repeated Bellman-optimality backups.",
+    "Critic":"\\(V_w(s)\\) is a learned approximation of \\(V\\) with weights \\(w\\), used as a baseline. Subtracting \\(V_w\\) from returns cuts the variance of the policy gradient without adding bias.",
+    "Action value":"\\(Q_\\pi(s,a)=\\mathbb{E}_\\pi[G_t\\mid s_t=s,a_t=a]\\): the expected return from \\(s\\) after taking \\(a\\). Acting greedily on \\(Q\\) gives a policy, so value-based methods need no explicit policy.",
+    "Optimal action value":"\\(Q^\\ast(s,a)\\) is the action value under an optimal policy. Q-learning estimates \\(Q^\\ast\\) directly, and \\(\\pi^\\ast(s)=\\argmax_a Q^\\ast(s,a)\\).",
+    "Online / target Q":"\\(Q_\\theta\\) is the network being trained; \\(Q_{\\theta^-}\\) is a slowly-updated copy that defines the regression target — decoupling them prevents the moving-target instability in DQN.",
+    "Advantage":"\\(A(s,a)=Q(s,a)-V(s)\\): how much better action \\(a\\) is than the state's average. Centring the signal keeps the gradient pointed at better-than-average actions and cuts its variance.",
+    "Advantage estimate":"\\(\\hat{A}_t\\) is a sampled advantage, usually GAE: \\(\\hat{A}_t=\\sum_{l\\ge 0}(\\gamma\\lambda)^l\\delta_{t+l}\\). It is the weight on the log-probability gradient in PPO, TRPO and A2C.",
+    "Return distribution":"\\(Z(s,a)\\) is the full distribution of the return, not just its mean \\(Q=\\mathbb{E}[Z]\\). Distributional agents (C51, QR-DQN, IQN) learn \\(Z\\) and still act on its mean.",
+    "Learning rate":"\\(\\alpha\\) is the update step size, as in \\(V\\leftarrow V+\\alpha\\,\\delta\\). Too large diverges; too small crawls. Often annealed over training.",
+    "TD error":"\\(\\delta_t=r_{t+1}+\\gamma V(s_{t+1})-V(s_t)\\): the gap between the bootstrapped target and the current estimate — the core learning signal of TD. Positive means better than expected.",
+    "Trace / GAE decay":"\\(\\lambda\\in[0,1]\\) interpolates between one-step TD (\\(\\lambda=0\\)) and Monte Carlo (\\(\\lambda=1\\)), setting how much weight longer returns receive. It is also the decay rate in GAE.",
+    "Eligibility trace":"\\(e_t(s)=\\gamma\\lambda\\,e_{t-1}(s)+\\mathbf{1}[s=s_t]\\): a fading record of how recently each state was visited, letting one TD error update many states at once.",
+    "Explore / clip":"\\(\\varepsilon\\) has two roles: the random-action probability in \\(\\varepsilon\\)-greedy exploration, and the width of the clip range \\([1-\\varepsilon,1+\\varepsilon]\\) in PPO.",
+    "Parameters":"\\(\\theta\\) usually denotes the policy (actor) weights and \\(w\\) the value (critic) weights — the trainable parameters of the function approximators.",
+    "Gradient":"\\(\\nabla_\\theta\\) is the derivative with respect to \\(\\theta\\). Policy-gradient methods ascend \\(\\nabla_\\theta J\\) to increase expected return.",
+    "Objective":"\\(J(\\theta)=\\mathbb{E}_{\\pi_\\theta}[G_0]\\), the expected return of \\(\\pi_\\theta\\) — the performance measure that training maximises.",
+    "Visit count":"\\(N(s,a)\\) counts how often the pair \\((s,a)\\) has been seen, used to average returns (Monte Carlo) and to drive exploration bonuses such as UCT.",
+    "Transition model":"\\(P(s'\\mid s,a)\\) is the probability of landing in \\(s'\\) after taking \\(a\\) in \\(s\\). Available only when the model is known (DP) or learned (Dyna, MuZero).",
+    "Reward model":"\\(R(s,a)\\) is the expected immediate reward predicted by the model. With \\(P\\) it defines an MDP the agent can plan inside.",
+    "Learned model":"\\(\\hat{P},\\hat{R}\\) are approximations of the dynamics and reward fitted from experience, then used for planning or to train a model-free learner more efficiently.",
+    "Exploration constant":"\\(c\\) trades exploration against exploitation in MCTS: \\(\\argmax_a[\\,Q(s,a)+c\\sqrt{\\ln N(s)/N(s,a)}\\,]\\). Larger \\(c\\) favours less-visited actions.",
+    "Node visits":"\\(N(s)\\) is the number of times a search-tree node has been visited, used in UCT's exploration bonus.",
+    "Expectation":"\\(\\mathbb{E}[\\cdot]\\) is the probability-weighted average over the randomness in the policy and environment. Almost every RL quantity is an expectation.",
+    "Bellman operator":"\\(\\mathcal{T}\\) applies one Bellman backup, e.g. \\((\\mathcal{T}V)(s)=\\max_a[\\,R(s,a)+\\gamma\\sum_{s'}P\\,V(s')\\,]\\). It is a contraction, so iterating it converges to \\(V^\\ast\\).",
+    "KL divergence":"\\(\\mathrm{KL}(p\\Vert q)\\) measures how far one distribution is from another (non-symmetric). Trust-region and RLHF methods bound or penalise \\(\\mathrm{KL}(\\pi_{\\text{old}}\\Vert\\pi_\\theta)\\).",
+    "Entropy":"\\(\\mathcal{H}(\\pi)=-\\sum_a \\pi(a\\mid s)\\log\\pi(a\\mid s)\\) measures how random the policy is. An entropy bonus on the reward encourages exploration — the idea behind SAC.",
+    "Importance ratio":"\\(\\rho_t=\\dfrac{\\pi(a_t\\mid s_t)}{b(a_t\\mid s_t)}\\) reweights data gathered under \\(b\\) to evaluate \\(\\pi\\). Products of these ratios can explode, so off-policy methods clip them.",
+    "Indicator":"\\(\\mathbf{1}[\\cdot]\\) equals 1 when its condition holds and 0 otherwise — used, for instance, to mark the current state when updating eligibility traces.",
+    "Sampled from":"\\(x\\sim p\\) reads 'x is sampled from \\(p\\)'. Expectations \\(\\mathbb{E}_{x\\sim p}[\\cdot]\\) average over such samples.",
+    "Target params":"\\(\\theta^-\\) is a frozen or slowly-tracking copy of \\(\\theta\\) used to compute the learning target, so the network does not chase its own shifting predictions (DQN, DDPG, TD3).",
+    "KL weight":"\\(\\beta\\) scales a KL penalty \\(\\beta\\,\\mathrm{KL}(\\pi_\\theta\\Vert\\pi_{\\text{ref}})\\) keeping the trained policy near a reference — how RLHF stops a model from drifting.",
+    "Probability ratio":"\\(r_t(\\theta)=\\dfrac{\\pi_\\theta(a_t\\mid s_t)}{\\pi_{\\text{old}}(a_t\\mid s_t)}\\): how much more likely the new policy makes the taken action. PPO clips this ratio.",
+    "Clipping":"\\(\\mathrm{clip}(r_t,1-\\varepsilon,1+\\varepsilon)\\) caps the probability ratio to \\([1-\\varepsilon,1+\\varepsilon]\\) so a single step cannot move the policy too far — PPO's trust-region stand-in.",
+    "Dataset":"\\(\\mathcal{D}\\) is a fixed buffer of past transitions. Offline RL must learn entirely from \\(\\mathcal{D}\\) with no new interaction, guarding against unreliable out-of-distribution actions.",
+    "Elementwise product":"\\(\\odot\\) is the Hadamard product — multiplies two vectors component by component. Noisy Nets use it for learnable noise: \\(w=\\mu+\\sigma\\odot\\epsilon\\).",
+    "Return-to-go":"\\(\\hat{R}_t=\\sum_{t'\\ge t} r_{t'}\\) is the desired cumulative future reward, fed as a conditioning token so a Decision Transformer generates actions achieving it."
+  };
+  var notaEl=document.getElementById("tab-nota");
+  var nhtml='<div class="hint">Grouped reference — click any symbol to expand its full explanation.</div>'+
+    '<div class="bar"><input type="search" id="nq" placeholder="Filter symbols by name or meaning"></div>';
+  notaGroups.forEach(function(g){
+    nhtml+='<div class="grp"><span class="dotc" style="background:'+cats[g.cat].dot+'"></span>'+g.name+'</div>';
+    g.rows.forEach(function(row){
+      nhtml+='<div class="nota-item">'+
+        '<div class="nota-row nota-head"><div class="nota-sym">'+M(row.s,false)+'</div>'+
+        '<div><div class="nota-name">'+row.name+'<i class="ti ti-chevron-right nchev" aria-hidden="true"></i></div>'+
+        '<div class="nota-mean">'+row.meaning+'</div></div></div>'+
+        '<div class="nota-detail"><div class="ndetail-text">'+(detailRich[row.name]||row.detail)+'</div>'+
+        (row.eg?'<div class="eqbox" style="margin-top:8px">'+M(row.eg,true)+'</div>':'')+
+        '<div class="nused"><span class="lab2">Appears in</span>'+row.used+'</div></div></div>';
+    });
+  });
+  notaEl.innerHTML=nhtml;
+  notaEl.addEventListener("click",function(e){
+    var head=e.target.closest(".nota-head"); if(!head) return;
+    var item=head.parentElement, wasOpen=item.classList.contains("open");
+    notaEl.querySelectorAll(".nota-item.open").forEach(function(x){ x.classList.remove("open"); });
+    if(!wasOpen) item.classList.add("open");
+  });
+  (function(){
+    var nq=document.getElementById("nq"); if(!nq) return;
+    nq.addEventListener("input",function(e){
+      var q=e.target.value.toLowerCase().trim();
+      notaEl.querySelectorAll(".nota-item").forEach(function(it){
+        it.style.display=(!q || it.textContent.toLowerCase().indexOf(q)!==-1)?"":"none";
+      });
+      notaEl.querySelectorAll(".grp").forEach(function(h){
+        var n=h.nextElementSibling, any=false;
+        while(n && !n.classList.contains("grp")){ if(n.classList.contains("nota-item") && n.style.display!=="none"){ any=true; break; } n=n.nextElementSibling; }
+        h.style.display=any?"":"none";
+      });
+    });
+  })();
+
+  function renderMath(){
+    if(!window.katex) return false;
+    reg.forEach(function(it){ var el=document.getElementById(it.id); if(!el||el.dataset.done) return;
+      try{ window.katex.render(it.tex,el,{displayMode:it.display,throwOnError:false,macros:KMACROS}); el.dataset.done="1"; }catch(e){ el.textContent=it.tex; } });
+    return true;
+  }
+  var autoDone=false;
+  function autoRender(){
+    if(autoDone) return true;
+    if(!window.renderMathInElement) return false;
+    var opt={delimiters:[{left:"\\(",right:"\\)",display:false}],throwOnError:false,macros:KMACROS};
+    try{ window.renderMathInElement(notaEl,opt); }catch(e){}
+    try{ window.renderMathInElement(eqEl,opt); }catch(e){}
+    autoDone=true; return true;
+  }
+  (function(){
+    var tries=0;
+    var iv=setInterval(function(){
+      var a=renderMath(), b=autoRender();
+      if((a&&b)||++tries>200) clearInterval(iv);
+    },50);
+    renderMath(); autoRender();
+  })();
+})();
+
+/* ================= VENN (dual lens) ================= */
+(function(){
+  var fam={ mb:"#534AB7", dp:"#BA7517", mc:"#D4537E", td:"#378ADD", dqn:"#D85A30", pg:"#639922", root:"#5F5E5A", ofl:"#6B7280" };
+
+  var chipsLearn=[
+    {n:"MCTS",a:1,b:0,c:0,pol:"",fam:"mb",cx:320,cy:95,note:"Pure forward search with a model — rolls out and backs up in a tree, no learned function."},
+    {n:"Value iter.",a:1,b:1,c:0,pol:"",fam:"dp",cx:215,cy:188,note:"Known model plus Bellman-optimality backups give exact values."},
+    {n:"Policy iter.",a:1,b:1,c:0,pol:"",fam:"dp",cx:222,cy:214,note:"Evaluation + greedy improvement with a known model; policy derived from values."},
+    {n:"Dyna-Q",a:1,b:1,c:0,pol:"off",fam:"mb",cx:238,cy:240,note:"Learns a model, then Q-learns on simulated transitions — model plus values."},
+    {n:"World Models",a:1,b:1,c:0,pol:"",fam:"mb",cx:226,cy:266,note:"Learns latent dynamics and trains inside imagined rollouts."},
+    {n:"AlphaZero",a:1,b:1,c:1,pol:"",fam:"mb",cx:300,cy:255,note:"MCTS + value head + policy head, self-play trained — all three at once."},
+    {n:"MuZero",a:1,b:1,c:1,pol:"",fam:"mb",cx:338,cy:282,note:"Learned latent model predicting reward, value, and policy."},
+    {n:"TD(0)",a:0,b:1,c:0,pol:"",fam:"td",cx:120,cy:290,note:"Bootstraps one step to estimate V — simplest TD rule."},
+    {n:"Q-learning",a:0,b:1,c:0,pol:"off",fam:"td",cx:95,cy:320,note:"Learns Q* from the greedy max, independent of behavior."},
+    {n:"SARSA",a:0,b:1,c:0,pol:"on",fam:"td",cx:112,cy:348,note:"On-policy TD: updates with the action actually taken next."},
+    {n:"DQN",a:0,b:1,c:0,pol:"off",fam:"dqn",cx:128,cy:376,note:"Deep Q-learning with replay + target net."},
+    {n:"Double Q",a:0,b:1,c:0,pol:"off",fam:"td",cx:100,cy:404,note:"Two Q-functions cut the max overestimation bias."},
+    {n:"MC control",a:0,b:1,c:0,pol:"on",fam:"mc",cx:118,cy:428,note:"Updates toward full returns — no bootstrap, no model."},
+    {n:"TD(λ)",a:0,b:1,c:0,pol:"",fam:"td",cx:148,cy:452,note:"Eligibility traces blend all n-step returns."},
+    {n:"REINFORCE",a:0,b:0,c:1,pol:"on",fam:"pg",cx:498,cy:355,note:"Pure policy gradient — no value function at all."},
+    {n:"A2C / A3C",a:0,b:1,c:1,pol:"on",fam:"pg",cx:270,cy:378,note:"Actor-critic: the advantage is a low-variance gradient signal."},
+    {n:"TRPO",a:0,b:1,c:1,pol:"on",fam:"pg",cx:268,cy:406,note:"KL-constrained update for stable improvement."},
+    {n:"TD3",a:0,b:1,c:1,pol:"off",fam:"pg",cx:272,cy:434,note:"Twin critics + delayed actor — stabilised off-policy AC."},
+    {n:"PPO",a:0,b:1,c:1,pol:"on",fam:"pg",cx:372,cy:378,note:"Clipped ratio — the workhorse of modern RL and RLHF."},
+    {n:"SAC",a:0,b:1,c:1,pol:"off",fam:"pg",cx:372,cy:406,note:"Entropy-regularised twin-Q off-policy actor-critic."},
+    {n:"DDPG",a:0,b:1,c:1,pol:"off",fam:"pg",cx:370,cy:434,note:"Deterministic off-policy actor-critic for continuous actions."},
+    {n:"GRPO",a:0,b:1,c:1,pol:"on",fam:"pg",cx:320,cy:454,note:"Group-normalised advantage — actor-critic without a critic net."}
+  ];
+
+  var chipsBackup=[
+    {n:"Monte Carlo",a:1,b:0,c:0,pol:"",fam:"mc",cx:298,cy:95,note:"Samples whole returns, no bootstrapping, no model — deep sample backups."},
+    {n:"MC control",a:1,b:0,c:0,pol:"on",fam:"mc",cx:342,cy:114,note:"On-policy control from sampled returns only."},
+    {n:"REINFORCE",a:1,b:0,c:0,pol:"on",fam:"pg",cx:300,cy:138,note:"Policy gradient from sampled returns; no bootstrap, no model."},
+    {n:"Actor-critic",a:1,b:1,c:0,pol:"on",fam:"pg",cx:238,cy:188,note:"Samples experience and bootstraps with a learned critic."},
+    {n:"TD(0)",a:1,b:1,c:0,pol:"",fam:"td",cx:246,cy:214,note:"Samples one transition and bootstraps the next-state estimate."},
+    {n:"SARSA",a:1,b:1,c:0,pol:"on",fam:"td",cx:236,cy:240,note:"Sample + bootstrap, on-policy."},
+    {n:"Q-learning",a:1,b:1,c:0,pol:"off",fam:"td",cx:248,cy:266,note:"Sample + bootstrap with the greedy max, off-policy."},
+    {n:"Exp. SARSA",a:1,b:1,c:0,pol:"on",fam:"td",cx:236,cy:292,note:"Sample + bootstrap over the policy expectation."},
+    {n:"n-step TD",a:1,b:1,c:0,pol:"",fam:"td",cx:236,cy:316,note:"Samples n steps, then bootstraps — between TD and MC."},
+    {n:"MCTS",a:1,b:0,c:1,pol:"",fam:"mb",cx:395,cy:222,note:"Samples rollouts through a model — sampling + model, little bootstrapping."},
+    {n:"Dyna-Q",a:1,b:1,c:1,pol:"off",fam:"mb",cx:298,cy:246,note:"Samples real + model-simulated steps, bootstraps Q — all three."},
+    {n:"AlphaZero",a:1,b:1,c:1,pol:"",fam:"mb",cx:342,cy:256,note:"Self-play samples, value bootstrap, model search — centre."},
+    {n:"MuZero",a:1,b:1,c:1,pol:"",fam:"mb",cx:320,cy:280,note:"Samples, bootstraps a value, plans with a learned model."},
+    {n:"Value iter.",a:0,b:1,c:1,pol:"",fam:"dp",cx:292,cy:396,note:"Bootstraps with a full-width model sweep — no sampling."},
+    {n:"Policy iter.",a:0,b:1,c:1,pol:"",fam:"dp",cx:350,cy:406,note:"Bootstraps over the full model, no sampling."},
+    {n:"Brute-force search",a:0,b:0,c:1,pol:"",fam:"root",cx:495,cy:362,note:"Exhaustive full-width planning with a model — no sampling, no bootstrap."}
+  ];
+
+  var modes={
+    learn:{
+      labels:[{t:"Model-based",sub:"uses or learns a model",color:"#534AB7"},{t:"Value-based",sub:"learns V or Q",color:"#185FA5"},{t:"Policy-based",sub:"explicit policy",color:"#3B6D11"}],
+      fills:["#7F77DD","#378ADD","#97C459"], strokes:["#534AB7","#185FA5","#3B6D11"],
+      ann:[{x:320,y:345,t:"actor-critic",it:1},{x:320,y:232,t:"all three"},{x:405,y:232,t:"(rare)",it:1}],
+      cap:"Three questions about what a method represents. Overlaps are the hybrids: value ∩ policy = the whole actor-critic family; all three at once = AlphaZero and MuZero. On/off-policy cuts across this, so it is a filter, not a circle.",
+      filters:[["all","All"],["a","Model-based"],["na","Model-free"],["b","Value"],["c","Policy"],["bc","Actor-critic"],["on","On-policy"],["off","Off-policy"]],
+      chips:chipsLearn,
+      key:[["#7F77DD","Model-based — plans with P, R"],["#378ADD","Value-based — greedy on values"],["#97C459","Policy-based — optimises π"],["#cfcfcf","Value ∩ Policy = actor-critic"],["#cfcfcf","All three = AlphaZero, MuZero"]],
+      member:function(c){ var p=[c.a?"Model-based":"Model-free"]; if(c.b&&c.c)p.push("Actor-critic (value + policy)"); else{ if(c.b)p.push("Value-based"); if(c.c)p.push("Policy-based"); } if(!c.b&&!c.c&&c.a)p.push("Planning / search"); return p.join("  ·  "); }
+    },
+    backup:{
+      labels:[{t:"Samples",sub:"uses sampled experience",color:"#993C1D"},{t:"Bootstraps",sub:"updates from an estimate",color:"#185FA5"},{t:"Uses a model",sub:"full-width / planning",color:"#534AB7"}],
+      fills:["#D85A30","#378ADD","#7F77DD"], strokes:["#993C1D","#185FA5","#534AB7"],
+      ann:[{x:250,y:250,t:"TD",it:1},{x:320,y:408,t:"DP",it:1},{x:430,y:230,t:"heuristic search",it:1}],
+      cap:"Sutton & Barto’s unified view of backups. Sampling vs bootstrapping vs a model: pure MC samples deep returns, TD = sample ∩ bootstrap, DP = bootstrap ∩ full model, and Dyna / AlphaZero / MuZero sit in the very centre using all three.",
+      filters:[["all","All"],["a","Samples"],["b","Bootstraps"],["c","Uses model"],["on","On-policy"],["off","Off-policy"]],
+      chips:chipsBackup,
+      key:[["#D85A30","Samples — learns from experience"],["#378ADD","Bootstraps — updates from an estimate"],["#7F77DD","Uses a model — full-width planning"],["#cfcfcf","Sample ∩ bootstrap = TD"],["#cfcfcf","All three = Dyna, MuZero"]],
+      member:function(c){ var p=[]; if(c.a)p.push("Samples experience"); if(c.b)p.push("Bootstraps"); if(c.c)p.push("Uses a model"); return p.join("  ·  "); }
+    }
+  };
+
+  var CIR=[{cx:320,cy:180},{cx:235,cy:330},{cx:405,cy:330}], R=165;
+  var curMode="learn", curFilter="all";
+  var svg=document.getElementById("vsvg"), chipBox=document.getElementById("vchips"),
+      vpanel=document.getElementById("vpanel"), vfilters=document.getElementById("vfilters"),
+      vkey=document.getElementById("vkey"), vcap=document.getElementById("vcap");
+
+  function drawSVG(m){
+    var s="";
+    for(var i=0;i<3;i++) s+='<circle cx="'+CIR[i].cx+'" cy="'+CIR[i].cy+'" r="'+R+'" fill="'+m.fills[i]+'" fill-opacity="0.15" stroke="'+m.strokes[i]+'" stroke-opacity="0.55" stroke-width="1.5"/>';
+    var L=m.labels;
+    s+='<text x="320" y="28" text-anchor="middle" style="fill:'+L[0].color+'; font-size:15px; font-weight:500;">'+L[0].t+'</text>';
+    s+='<text x="320" y="45" text-anchor="middle" style="fill:#8b93a4; font-size:11px;">'+L[0].sub+'</text>';
+    s+='<text x="70" y="500" text-anchor="start" style="fill:'+L[1].color+'; font-size:15px; font-weight:500;">'+L[1].t+'</text>';
+    s+='<text x="70" y="516" text-anchor="start" style="fill:#8b93a4; font-size:11px;">'+L[1].sub+'</text>';
+    s+='<text x="570" y="500" text-anchor="end" style="fill:'+L[2].color+'; font-size:15px; font-weight:500;">'+L[2].t+'</text>';
+    s+='<text x="570" y="516" text-anchor="end" style="fill:#8b93a4; font-size:11px;">'+L[2].sub+'</text>';
+    m.ann.forEach(function(a){ s+='<text x="'+a.x+'" y="'+a.y+'" text-anchor="middle" style="fill:#8b93a4; font-size:'+(a.it?10.5:11)+'px;'+(a.it?' font-style:italic;':'')+'">'+a.t+'</text>'; });
+    svg.innerHTML=s;
+  }
+
+  function matchFilter(c,f){
+    switch(f){ case "all":return true; case "a":return !!c.a; case "b":return !!c.b; case "c":return !!c.c;
+      case "na":return !c.a; case "bc":return c.b&&c.c; case "on":return c.pol==="on"; case "off":return c.pol==="off"; }
+    return true;
+  }
+
+  function drawChips(m){
+    chipBox.innerHTML=m.chips.map(function(c,i){
+      return '<button class="chip" data-i="'+i+'" style="left:'+(c.cx/640*100)+'%; top:'+(c.cy/520*100)+'%"><span class="cd" style="background:'+fam[c.fam]+'"></span>'+c.n+'</button>';
+    }).join("");
+  }
+  function drawFilters(m){
+    vfilters.innerHTML=m.filters.map(function(f,i){ return '<button class="fb'+(f[0]===curFilter?" on":"")+'" data-f="'+f[0]+'">'+f[1]+'</button>'; }).join("");
+  }
+  function drawKey(m){
+    vkey.innerHTML=m.key.map(function(k){ return '<div class="ki"><span class="sw" style="background:'+k[0]+'"></span><span>'+k[1]+'</span></div>'; }).join("");
+  }
+  function polTag(c){ if(c.pol==="on")return '<span class="pill p-on">on-policy</span>'; if(c.pol==="off")return '<span class="pill p-off">off-policy</span>'; return ""; }
+
+  function showDefault(){
+    var m=modes[curMode];
+    vpanel.innerHTML='<div class="ph"><span class="pt">'+(curMode==="learn"?"What a method learns":"How a method backs up")+'</span></div><div class="pintu">'+m.cap+'</div>';
+  }
+  var chipToTitle = {
+    "Value iter.": "Value iteration", "Policy iter.": "Policy iteration", "Double Q": "Double Q-learning",
+    "MC control": "MC control", "Q-learning": "Q-learning", "SARSA": "SARSA", "TD(λ)": "TD(λ)",
+    "TD3": "TD3", "SAC": "SAC", "DDPG": "DDPG", "Exp. SARSA": "Expected SARSA", "Brute-force search": "Dynamic programming"
+  };
+
+  function showChip(c){
+    var m=modes[curMode];
+    var nodeName = chipToTitle[c.n] || c.n;
+    var node = window._rlNodesList && window._rlNodesList.find(function(n){ return n.title.indexOf(nodeName)===0; });
+    var pillsHtml = node ? (node.pills||[]).join("") : polTag(c);
+
+    var html = '<div class="ph"><span class="pt">'+c.n+'</span><span class="pills" style="margin-left:auto">'+pillsHtml+'</span></div>'+
+      '<div class="pc" style="font-size:12px; color:var(--text-muted); margin-top:3px;">'+m.member(c)+'</div>'+
+      '<div class="pintu">'+c.note+'</div>';
+    
+    if (node) {
+      if (node.intu) html += '<div class="lab" style="margin-top:16px;">Rationale</div><div class="pintu" style="margin-top:4px;">'+node.intu+'</div>';
+      if (node.when) html += '<div class="lab" style="margin-top:12px;">When to use</div><div class="pwhen" style="margin-top:4px; font-size:13px; color:var(--text-secondary); line-height:1.6;">'+node.when+'</div>';
+      if (node.tex) html += '<div class="lab" style="margin-top:12px;">Equation</div><div class="eqbox" style="margin-top:4px;" id="vennEqTarget"></div>';
+    }
+    
+    vpanel.innerHTML = html;
+    
+    if (node && node.tex) {
+      var t = document.getElementById("vennEqTarget");
+      if (window.katex) {
+        try { window.katex.render(node.tex, t, {displayMode:true, throwOnError:false, macros: KMACROS}); }
+        catch(e) { t.textContent = node.tex; }
+      } else { t.textContent = node.tex; }
+    }
+  }
+
+  function applyFilter(){
+    var m=modes[curMode];
+    chipBox.querySelectorAll(".chip").forEach(function(x){ x.classList.toggle("dim",!matchFilter(m.chips[+x.dataset.i],curFilter)); });
+  }
+
+  function renderMode(){
+    var m=modes[curMode]; curFilter="all";
+    vcap.textContent="";
+    drawSVG(m); drawChips(m); drawFilters(m); drawKey(m); showDefault();
+  }
+
+  chipBox.addEventListener("click",function(e){
+    var b=e.target.closest(".chip"); if(!b) return;
+    chipBox.querySelectorAll(".chip").forEach(function(x){ x.classList.remove("on"); });
+    b.classList.add("on"); showChip(modes[curMode].chips[+b.dataset.i]);
+  });
+  vfilters.addEventListener("click",function(e){
+    var b=e.target.closest(".fb"); if(!b) return;
+    curFilter=b.dataset.f;
+    vfilters.querySelectorAll(".fb").forEach(function(x){ x.classList.remove("on"); });
+    b.classList.add("on"); applyFilter();
+  });
+  document.getElementById("vmode").addEventListener("click",function(e){
+    var b=e.target.closest("button"); if(!b) return;
+    document.querySelectorAll("#vmode button").forEach(function(x){ x.classList.remove("on"); });
+    b.classList.add("on"); curMode=b.dataset.m; renderMode();
+  });
+
+  renderMode();
+})();
+
+/* ================= GRIDWORLD ================= */
+(function(){
+  var R=5,C=5,N=R*C;
+  var ACTS=['UP','DOWN','LEFT','RIGHT'];
+  var DELTA={UP:[-1,0],DOWN:[1,0],LEFT:[0,-1],RIGHT:[0,1]};
+  var ARROW={UP:'↑',DOWN:'↓',LEFT:'←',RIGHT:'→'};
+  var PERP={UP:['LEFT','RIGHT'],DOWN:['LEFT','RIGHT'],LEFT:['UP','DOWN'],RIGHT:['UP','DOWN']};
+
+  var type=new Array(N).fill('empty');
+  function setT(r,c,t){ type[r*C+c]=t; }
+  setT(0,0,'start'); setT(4,4,'goal'); setT(1,3,'pit');
+  setT(2,1,'wall'); setT(2,2,'wall'); setT(2,3,'wall'); setT(4,0,'litter');
+
+  var gamma=0.9, stepR=-0.1, slip=0.0, litterVal=1;
+  var V=new Array(N).fill(0), Q=new Array(N);
+  var rollouts=[], active=0, tool='goal', timer=null;
+
+  function rc(s){ return [Math.floor(s/C), s%C]; }
+  function idx(r,c){ return r*C+c; }
+  function inB(r,c){ return r>=0&&r<R&&c>=0&&c<C; }
+  function isWall(r,c){ return type[idx(r,c)]==='wall'; }
+  function terminal(s){ return type[s]==='goal'||type[s]==='pit'; }
+  function reward(s){ var t=type[s]; return t==='goal'?10 : t==='pit'?-10 : t==='litter'?litterVal : 0; }
+  function move(r,c,d){ var nr=r+DELTA[d][0], nc=c+DELTA[d][1]; if(!inB(nr,nc)||isWall(nr,nc)) return [r,c]; return [nr,nc]; }
+  function findStart(){ for(var s=0;s<N;s++) if(type[s]==='start') return s; return 0; }
+
+  function Qsa(s,a){
+    var p=rc(s), r=p[0], c=p[1];
+    var outs=[[1-slip,a],[slip/2,PERP[a][0]],[slip/2,PERP[a][1]]];
+    var q=0;
+    for(var i=0;i<outs.length;i++){
+      var pr=outs[i][0]; if(pr<=0) continue;
+      var m=move(r,c,outs[i][1]); var sp=idx(m[0],m[1]);
+      var rew=stepR+reward(sp);
+      var fut=terminal(sp)?0:gamma*V[sp];
+      q+=pr*(rew+fut);
+    }
+    return q;
+  }
+  function solve(){
+    for(var s=0;s<N;s++) V[s]=0;
+    for(var it=0; it<160; it++){
+      var nV=V.slice();
+      for(var s=0;s<N;s++){
+        if(type[s]==='wall'||terminal(s)) continue;
+        var best=-1e9;
+        for(var k=0;k<4;k++){ var q=Qsa(s,ACTS[k]); if(q>best) best=q; }
+        nV[s]=best;
+      }
+      V=nV;
+    }
+    for(var s=0;s<N;s++){
+      if(type[s]==='wall'||terminal(s)){ Q[s]=null; continue; }
+      Q[s]={}; for(var k=0;k<4;k++) Q[s][ACTS[k]]=Qsa(s,ACTS[k]);
+    }
+  }
+  function greedy(s){
+    if(!Q[s]) return null; var best=-1e9,ba=null;
+    for(var k=0;k<4;k++){ var q=Q[s][ACTS[k]]; if(q>best){best=q;ba=ACTS[k];} }
+    return ba;
+  }
+
+  function blankRollout(){ return {steps:[{state:findStart(),action:null,reward:0,cum:0}], view:0}; }
+  function resetAll(){ rollouts=[blankRollout()]; active=0; }
+  function curR(){ return rollouts[active]; }
+  function curState(){ var r=curR(); return r.steps[r.view].state; }
+  function returnG0(st){ var g=0; for(var i=1;i<st.length;i++) g+=Math.pow(gamma,i-1)*st[i].reward; return g; }
+  function recomputeRewards(){
+    for(var k=0;k<rollouts.length;k++){ var st=rollouts[k].steps;
+      for(var i=1;i<st.length;i++){ st[i].reward=stepR+reward(st[i].state); st[i].cum=Math.round((st[i-1].cum+st[i].reward)*1000)/1000; }
+    }
+  }
+  function act(a){
+    var r=curR(); var v=r.view; var s=r.steps[v].state; if(terminal(s)) return;
+    var p=rc(s); var m=move(p[0],p[1],a); var sp=idx(m[0],m[1]);
+    var rew=stepR+reward(sp);
+    r.steps=r.steps.slice(0,v+1);
+    r.steps.push({state:sp,action:a,reward:rew,cum:Math.round((r.steps[v].cum+rew)*1000)/1000});
+    r.view=v+1; render();
+    if(terminal(sp)) setStatus('reached');
+  }
+  function setStatus(reason){
+    var el=document.getElementById('gwStatus'); if(!el) return;
+    if(!reason){ el.textContent=''; el.className='gwstatus'; return; }
+    var M={
+      reached:['Reached a terminal state — episode complete.','ok'],
+      stuck:['The greedy policy stalls here: its best action bumps a wall, so the agent stops moving (a local optimum). Run halted.','warn'],
+      loop:['The greedy policy loops — it revisits a state and never reaches a terminal under these rewards. Try lowering the litter or step reward, or check that a goal is reachable.','warn'],
+      noaction:['No action available from this cell.','warn'],
+      long:['Stopped after 120 steps.','warn']
+    };
+    var m=M[reason]||['','']; el.textContent=m[0]; el.className='gwstatus '+m[1];
+  }
+  function stopPlay(reason){ if(timer){ clearInterval(timer); timer=null; } setStatus(reason); renderPlayback(); }
+  function play(){
+    if(timer){ stopPlay(); return; }
+    setStatus();
+    var seen={}; seen[curState()]=1;
+    timer=setInterval(function(){
+      var s=curState();
+      if(terminal(s)){ stopPlay('reached'); return; }
+      var a=greedy(s);
+      if(a===null){ stopPlay('noaction'); return; }
+      var p=rc(s); var m=move(p[0],p[1],a); var sp=idx(m[0],m[1]);
+      if(sp===s){ stopPlay('stuck'); return; }
+      if(seen[sp]){ stopPlay('loop'); return; }
+      seen[sp]=1; act(a);
+      if(curR().steps.length>120){ stopPlay('long'); return; }
+    },420);
+    renderPlayback();
+  }
+
+  function vColor(t){ var h=Math.round(t*120); return 'hsl('+h+',62%,87%)'; }
+
+  var grid=document.getElementById('gwGrid');
+  var svg=document.getElementById('gwPath');
+  if(!grid) return;
+
+  function renderBoard(){
+    var vmin=1e9,vmax=-1e9;
+    for(var s=0;s<N;s++){ if(type[s]==='wall'||terminal(s)) continue; if(V[s]<vmin)vmin=V[s]; if(V[s]>vmax)vmax=V[s]; }
+    var rA=curR(); var visited={}; for(var i=0;i<=rA.view;i++) visited[rA.steps[i].state]=1;
+    var cur=rA.steps[rA.view].state;
+    var html='';
+    for(var s=0;s<N;s++){
+      var t=type[s];
+      if(t==='wall'){ html+='<div class="cell wall" data-s="'+s+'"></div>'; continue; }
+      var cls='cell', style='', inner='';
+      if(terminal(s)){
+        var goal=(t==='goal'); var col=goal?'var(--text-success)':'var(--text-danger)';
+        cls+=' term';
+        style='background:'+(goal?'var(--bg-success)':'var(--bg-danger)')+';border-color:'+col;
+        inner+='<i class="ti '+(goal?'ti-flag':'ti-alert-triangle')+' cicon" style="color:'+col+'" aria-hidden="true"></i>';
+        inner+='<div class="cterm" style="color:'+col+'"><div class="rw">'+(goal?'+10':'−10')+'</div><div class="tg">terminal</div></div>';
+      } else {
+        if(t==='litter') style='background:var(--bg-warning)';
+        else { var tt=(vmax>vmin)?(V[s]-vmin)/(vmax-vmin):0.5; style='background:'+vColor(tt); }
+        inner+='<span class="cv">'+V[s].toFixed(1)+'</span>';
+        if(t==='litter') inner+='<span class="crew" style="color:var(--text-warning)">'+(litterVal>=0?'+':'')+litterVal+'</span>';
+        var a=greedy(s); if(a) inner+='<span class="ca">'+ARROW[a]+'</span>';
+        if(t==='start') inner+='<span class="cs">S</span>';
+      }
+      if(visited[s]&&s!==cur) inner+='<span class="vdot"></span>';
+      if(s===cur) inner+='<span class="agent">A</span>';
+      html+='<div class="'+cls+'" data-s="'+s+'" style="'+style+'">'+inner+'</div>';
+    }
+    grid.innerHTML=html;
+    renderPath();
+  }
+  function center(s){ var p=rc(s); return [p[1]*64+30, p[0]*64+30]; }
+  function renderPath(){
+    var rA=curR(); if(rA.view<1){ svg.innerHTML=''; return; }
+    var pts=[]; for(var i=0;i<=rA.view;i++) pts.push(center(rA.steps[i].state));
+    var d='M'+pts[0][0]+' '+pts[0][1];
+    for(var i=1;i<pts.length;i++) d+=' L'+pts[i][0]+' '+pts[i][1];
+    var dots=''; for(var i=0;i<pts.length;i++) dots+='<circle cx="'+pts[i][0]+'" cy="'+pts[i][1]+'" r="3" fill="var(--text-accent)" opacity="0.8"/>';
+    svg.innerHTML='<path d="'+d+'" fill="none" stroke="var(--text-accent)" stroke-width="2.5" stroke-opacity="0.65" stroke-linejoin="round" stroke-linecap="round"/>'+dots;
+  }
+  function renderTraj(){
+    var el=document.getElementById('gwTraj'); var html='';
+    for(var k=0;k<rollouts.length;k++){
+      var Rk=rollouts[k]; var g0=returnG0(Rk.steps);
+      html+='<div class="rollout'+(k===active?' active':'')+'" data-k="'+k+'">';
+      html+='<div class="rhead"><span class="rname">Rollout '+(k+1)+'</span><span class="rret">return G<sub>0</sub> = '+g0.toFixed(2)+'</span><span class="rsp"></span>'+(rollouts.length>1?'<button class="ricon" data-del="'+k+'" title="Delete rollout">&times;</button>':'')+'</div>';
+      html+='<div class="stepper">';
+      for(var i=0;i<Rk.steps.length;i++){
+        if(i>0){ var st=Rk.steps[i];
+          html+='<div class="snode"><div class="stop"><span class="aarr">'+ARROW[st.action]+'</span><span class="ar">'+st.reward.toFixed(2)+'</span></div><div class="scirc"><span class="dotA"></span></div><div class="sbot"></div></div>';
+        }
+        var p=rc(Rk.steps[i].state); var on=(k===active && i===Rk.view);
+        html+='<div class="snode'+(on?' cur':'')+'" data-k="'+k+'" data-i="'+i+'"><div class="stop"></div><div class="scirc"><span class="dotS'+(on?' cur':'')+'"></span></div><div class="sbot">('+p[0]+','+p[1]+')</div></div>';
+      }
+      html+='</div></div>';
+    }
+    el.innerHTML=html;
+    el.querySelectorAll('.snode[data-i]').forEach(function(b){ b.onclick=function(){ stopPlay(); active=+b.dataset.k; rollouts[active].view=+b.dataset.i; render(); }; });
+    el.querySelectorAll('.ricon[data-del]').forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); rollouts.splice(+b.dataset.del,1); if(active>=rollouts.length) active=rollouts.length-1; stopPlay(); render(); }; });
+    el.querySelectorAll('.rhead').forEach(function(h){ h.onclick=function(){ stopPlay(); active=+h.parentElement.dataset.k; render(); }; });
+  }
+  function renderSar(){
+    var el=document.getElementById('gwSar'); var r=curR(); var step=r.steps[r.view]; var p=rc(step.state);
+    var aTxt = step.action? ARROW[step.action]+' '+step.action.toLowerCase() : '—';
+    var term = terminal(step.state)? ' (terminal)':'';
+    el.innerHTML=
+      '<div class="c"><div class="k">State s</div><div class="v">('+p[0]+','+p[1]+')'+term+'</div></div>'+
+      '<div class="c"><div class="k">Action a</div><div class="v">'+aTxt+'</div></div>'+
+      '<div class="c"><div class="k">Reward r</div><div class="v">'+(r.view===0?'—':step.reward.toFixed(2))+'</div></div>'+
+      '<div class="c"><div class="k">Return G<sub>0</sub></div><div class="v">'+returnG0(r.steps).toFixed(2)+'</div></div>';
+  }
+  function renderTable(){
+    var el=document.getElementById('gwVqtable'); var cur=curState();
+    var h='<thead><tr><th>state</th><th>type</th><th>V(s)</th><th>Q ↑</th><th>Q ↓</th><th>Q ←</th><th>Q →</th><th>π(s)</th></tr></thead><tbody>';
+    for(var s=0;s<N;s++){
+      if(type[s]==='wall') continue;
+      var p=rc(s); var g=greedy(s);
+      var cls=(s===cur)?' class="cur"':'';
+      h+='<tr'+cls+'><td>('+p[0]+','+p[1]+')</td><td>'+type[s]+'</td>';
+      if(terminal(s)){ h+='<td>0.00</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>'; continue; }
+      h+='<td>'+V[s].toFixed(2)+'</td>';
+      for(var k=0;k<4;k++){ var a=ACTS[k]; var q=Q[s][a]; h+='<td class="'+(a===g?'gq':'')+'">'+q.toFixed(2)+'</td>'; }
+      h+='<td>'+(g?ARROW[g]:'—')+'</td></tr>';
+    }
+    el.innerHTML=h+'</tbody>';
+  }
+  function renderPlayback(){
+    var el=document.getElementById('gwPlayback');
+    el.innerHTML=
+      '<button class="tbtn sq" id="gwBack" title="Step back">◀</button>'+
+      '<button class="tbtn sq" id="gwFwd" title="Step forward">▶</button>'+
+      '<button class="tbtn sq" id="gwStep" title="Greedy step">π</button>'+
+      '<button class="tbtn" id="gwPlay">'+(timer?'<i class="ti ti-player-pause"></i>Pause':'<i class="ti ti-player-play"></i>Run greedy')+'</button>'+
+      '<button class="tbtn" id="gwReset"><i class="ti ti-refresh"></i>Reset</button>'+
+      '<button class="tbtn" id="gwNew"><i class="ti ti-plus"></i>New rollout</button>';
+    document.getElementById('gwReset').onclick=function(){ stopPlay(); rollouts[active]=blankRollout(); render(); };
+    document.getElementById('gwBack').onclick=function(){ stopPlay(); var r=curR(); r.view=Math.max(0,r.view-1); render(); };
+    document.getElementById('gwFwd').onclick=function(){ stopPlay(); var r=curR(); r.view=Math.min(r.steps.length-1,r.view+1); render(); };
+    document.getElementById('gwStep').onclick=function(){ stopPlay(); var a=greedy(curState()); if(a) act(a); };
+    document.getElementById('gwPlay').onclick=play;
+    document.getElementById('gwNew').onclick=function(){ stopPlay(); rollouts.push(blankRollout()); active=rollouts.length-1; render(); };
+  }
+  function renderQ(){
+    var el=document.getElementById('gwQ'); var s=curState(); var p=rc(s);
+    if(type[s]==='wall'){ el.innerHTML='<div class="qempty">Wall — not a state.</div>'; return; }
+    if(terminal(s)){ el.innerHTML='<div class="qhead">('+p[0]+','+p[1]+') is a <b>terminal</b> state · reward on entry '+(reward(s)>=0?'+':'')+reward(s)+' · V(s) = 0</div>'; return; }
+    var g=greedy(s); var qs=[Q[s].UP,Q[s].DOWN,Q[s].LEFT,Q[s].RIGHT];
+    var mn=Math.min.apply(null,qs), mx=Math.max.apply(null,qs); var rows='';
+    for(var k=0;k<4;k++){ var a=ACTS[k]; var q=Q[s][a]; var w=(mx>mn)?((q-mn)/(mx-mn))*100:50; var best=(a===g);
+      rows+='<div class="qrow'+(best?' best':'')+'"><span class="qa">'+ARROW[a]+' '+a.toLowerCase()+'</span><div class="qbar"><div class="qfill" style="width:'+w.toFixed(0)+'%"></div></div><span class="qv">'+q.toFixed(2)+'</span><span class="qtag"'+(best?'':' style="visibility:hidden"')+'>greedy</span></div>';
+    }
+    el.innerHTML='<div class="qhead">state ('+p[0]+','+p[1]+') &nbsp;·&nbsp; V(s) = <b>'+V[s].toFixed(2)+'</b></div>'+rows;
+  }
+  function render(){ renderBoard(); renderTraj(); renderSar(); renderQ(); renderTable(); renderPlayback(); }
+
+  var TOOLS=[['start','Start'],['goal','Goal +10'],['pit','Pit −10'],['wall','Wall'],['litter','Litter'],['empty','Erase']];
+  function renderTools(){
+    var el=document.getElementById('gwTools'); var h='';
+    for(var i=0;i<TOOLS.length;i++) h+='<button class="tbtn'+(tool===TOOLS[i][0]?' on':'')+'" data-t="'+TOOLS[i][0]+'">'+TOOLS[i][1]+'</button>';
+    h+='<button class="tbtn" id="gwClear">Clear board</button>';
+    el.innerHTML=h;
+    el.querySelectorAll('[data-t]').forEach(function(b){ b.onclick=function(){ tool=b.dataset.t; renderTools(); }; });
+    document.getElementById('gwClear').onclick=function(){ for(var s=0;s<N;s++) type[s]='empty'; type[0]='start'; stopPlay(); solve(); resetAll(); render(); };
+  }
+  function renderSliders(){
+    var el=document.getElementById('gwSliders');
+    function card(id,vid,name,mn,mx,st,val,disp){
+      return '<div class="ctl"><div class="top"><span class="nm">'+name+'</span><span class="val" id="'+vid+'">'+disp+'</span></div><input type="range" id="'+id+'" min="'+mn+'" max="'+mx+'" step="'+st+'" value="'+val+'"></div>';
+    }
+    el.innerHTML=
+      card('gwG','gwGv','discount γ',0.5,0.99,0.01,gamma,gamma.toFixed(2))+
+      card('gwS','gwSv','step reward',-1,0.2,0.05,stepR,stepR.toFixed(2))+
+      card('gwP','gwPv','slip prob',0,0.4,0.05,slip,slip.toFixed(2))+
+      card('gwL','gwLv','litter reward',-2,2,0.5,litterVal,litterVal.toFixed(1));
+    function bind(id,vid,set,fmt){ var i=document.getElementById(id); i.oninput=function(){ set(parseFloat(i.value)); document.getElementById(vid).textContent=fmt(); stopPlay(); solve(); recomputeRewards(); render(); }; }
+    bind('gwG','gwGv',function(v){gamma=v;},function(){return gamma.toFixed(2);});
+    bind('gwS','gwSv',function(v){stepR=v;},function(){return stepR.toFixed(2);});
+    bind('gwP','gwPv',function(v){slip=v;},function(){return slip.toFixed(2);});
+    bind('gwL','gwLv',function(v){litterVal=v;},function(){return litterVal.toFixed(1);});
+  }
+  function renderDrive(){
+    var el=document.getElementById('gwDrive');
+    el.innerHTML=
+      '<div class="sp"></div><button class="tbtn sq" data-a="UP">↑</button><div class="sp"></div>'+
+      '<button class="tbtn sq" data-a="LEFT">←</button><button class="tbtn sq" data-a="DOWN">↓</button><button class="tbtn sq" data-a="RIGHT">→</button>';
+    el.querySelectorAll('[data-a]').forEach(function(b){ b.onclick=function(){ stopPlay(); act(b.dataset.a); }; });
+  }
+
+  document.getElementById('gwLegend').innerHTML=
+    '<span><span class="sw" style="background:var(--bg-accent)"></span>start</span>'+
+    '<span><span class="sw" style="background:var(--bg-success)"></span>goal +10</span>'+
+    '<span><span class="sw" style="background:var(--bg-danger)"></span>pit −10</span>'+
+    '<span><span class="sw" style="background:var(--bg-warning)"></span>litter</span>'+
+    '<span><span class="sw" style="background:#3a4252"></span>wall</span>'+
+    '<span><span class="sw" style="background:linear-gradient(90deg,hsl(0,62%,87%),hsl(120,62%,87%))"></span>V(s) low→high</span>';
+
+  grid.addEventListener('click',function(e){
+    var c=e.target.closest('.cell'); if(!c) return; var s=+c.dataset.s;
+    if(tool==='start'){ for(var i=0;i<N;i++) if(type[i]==='start') type[i]='empty'; }
+    type[s]=tool;
+    stopPlay(); solve(); resetAll(); render();
+  });
+
+  renderTools(); renderSliders(); renderDrive();
+  var tglB=document.getElementById('gwTblToggle'), tglW=document.getElementById('gwTblWrap');
+  if(tglB) tglB.onclick=function(){ var show=tglW.style.display==='none'; tglW.style.display=show?'block':'none'; tglB.innerHTML=(show?'<i class="ti ti-table" aria-hidden="true"></i>Hide full table':'<i class="ti ti-table" aria-hidden="true"></i>Show full V / Q table'); };
+  solve(); resetAll(); render();
+})();
+
+/* ================= TAB SWITCHING ================= */
+(function(){
+  document.getElementById("maintabs").addEventListener("click",function(e){
+    var b=e.target.closest("button"); if(!b) return;
+    document.querySelectorAll("#maintabs button").forEach(function(x){ x.classList.remove("on"); });
+    b.classList.add("on");
+    document.querySelectorAll(".tabview").forEach(function(v){ v.classList.remove("on"); });
+    document.getElementById("tab-"+b.dataset.t).classList.add("on");
+    if(b.dataset.t==="canvas" && window._rlFit){ window._rlFit(); }
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RL Infinite-Canvas Tree</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.11.0/dist/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<style>
+  :root{
+    --surface-2:#ffffff; --surface-1:#f6f7f9; --surface-0:#eef0f3;
+    --text-primary:#1f2430; --text-secondary:#3b4252; --text-muted:#8b93a4;
+    --text-accent:#185FA5; --text-success:#0F6E56; --text-warning:#854F0B; --text-pro:#3C3489;
+    --bg-accent:#E6F1FB; --bg-success:#E1F5EE; --bg-warning:#FAEEDA; --bg-pro:#EEEDFE;
+    --border:#e6e8ee; --border-strong:#cdd2dc;
+    --radius:8px; --font-sans:'Segoe UI',system-ui,-apple-system,sans-serif;
+  }
+  body{ background:#fbfbfc; margin:0; padding:24px; }
+  .container{ max-width:760px; margin:0 auto; }
+  .rlc { padding: 1rem 0; font-family: var(--font-sans); color: var(--text-primary); }
+  .rlc-head h3 { font-size: 18px; font-weight: 500; margin: 0; }
+  .rlc-head p { font-size: 12.5px; color: var(--text-muted); margin: 2px 0 0; }
+  .bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 12px 0; }
+  .bar input { flex: 1; min-width: 150px; padding:7px 11px; border:0.5px solid var(--border); border-radius:var(--radius); background:var(--surface-2); color:var(--text-primary); font-size:13px; outline:none; }
+  .bar input:focus { border-color:var(--text-accent); }
+  .b { border: 0.5px solid var(--border-strong); background: transparent; color: var(--text-secondary); border-radius: var(--radius); padding: 6px 9px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+  .b:hover { background: var(--surface-1); }
+  .b i { font-size: 15px; }
+  .stage { position: relative; height: 540px; border: 0.5px solid var(--border); border-radius: 12px; background: var(--surface-1); overflow: hidden; cursor: grab; background-image: radial-gradient(var(--border) 1px, transparent 1px); background-size: 22px 22px; }
+  .stage.drag { cursor: grabbing; }
+  .world { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
+  .world svg { position: absolute; top: 0; left: 0; overflow: visible; pointer-events: none; }
+  .gnode { position: absolute; box-sizing: border-box; width: 196px; background: var(--surface-2); border: 0.5px solid var(--border); border-left: 3px solid var(--n-dot, var(--border)); border-radius: 0 10px 10px 0; padding: 9px 11px; cursor: pointer; user-select: none; }
+  .gnode:hover { border-color: var(--border-strong); }
+  .gnode.sel { border-color: var(--text-accent); box-shadow: 0 0 0 1px var(--text-accent); }
+  .gnode.dim { opacity: 0.25; }
+  .gnode .gt { font-size: 13px; line-height: 1.3; }
+  .gnode .gm { font-size: 11px; color: var(--text-muted); margin-top: 3px; display: flex; align-items: center; gap: 5px; }
+  .gnode .gm .ct { display: inline-flex; align-items: center; gap: 4px; }
+  .gnode .cnt { margin-left: auto; font-size: 10.5px; color: var(--text-muted); border: 0.5px solid var(--border); border-radius: 999px; padding: 0 6px; }
+  .gnode .chev { font-size: 14px; color: var(--text-muted); }
+  .dotc { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .panel { margin-top: 14px; border: 0.5px solid var(--border); border-radius: 12px; background: var(--surface-2); padding: 14px 16px; }
+  .panel .ph { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+  .panel .ph .pt { font-size: 15px; font-weight: 500; }
+  .panel .ph .pc { font-size: 11.5px; color: var(--text-muted); }
+  .panel .pintu { font-size: 13.5px; color: var(--text-secondary); line-height: 1.65; margin: 11px 0; }
+  .lab { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); margin: 12px 0 6px; }
+  .eqbox { background: var(--surface-1); border: 0.5px solid var(--border); border-radius: 8px; padding: 11px 13px; overflow-x: auto; }
+  .pwhen { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+  .pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .pill { font-size: 11px; padding: 2px 9px; border-radius: 999px; border: 0.5px solid var(--border); color: var(--text-secondary); }
+  .p-on { background: var(--bg-success); color: var(--text-success); border-color: transparent; }
+  .p-off { background: var(--bg-warning); color: var(--text-warning); border-color: transparent; }
+  .p-val { background: var(--bg-accent); color: var(--text-accent); border-color: transparent; }
+  .p-pol { background: var(--bg-pro); color: var(--text-pro); border-color: transparent; }
+  .legend { display: flex; flex-wrap: wrap; gap: 10px 14px; margin-top: 10px; font-size: 11.5px; color: var(--text-muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .zoomwrap { position: absolute; right: 10px; bottom: 10px; display: flex; flex-direction: column; gap: 4px; }
+  .zoomwrap .b { background: var(--surface-2); width: 30px; height: 30px; justify-content: center; padding: 0; }
+  .hintbar { position: absolute; left: 10px; bottom: 10px; font-size: 11px; color: var(--text-muted); background: var(--surface-2); border: 0.5px solid var(--border); border-radius: 999px; padding: 3px 10px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h2 class="sr-only">A pannable, zoomable infinite-canvas mind-map of reinforcement learning.</h2>
+
+<div class="rlc">
+  <div class="rlc-head">
+    <h3>Reinforcement learning, on an infinite canvas</h3>
+    <p>Drag to pan, scroll to zoom, click a node to expand its branch and inspect it below.</p>
+  </div>
+  <div class="bar">
+    <input type="search" id="q" placeholder="Search: off-policy, bellman, entropy, replay, MCTS">
+    <button class="b" id="expandAll"><i class="ti ti-arrows-maximize" aria-hidden="true"></i>Expand all</button>
+    <button class="b" id="collapseAll"><i class="ti ti-arrows-minimize" aria-hidden="true"></i>Collapse</button>
+    <button class="b" id="fit"><i class="ti ti-focus-centered" aria-hidden="true"></i>Fit</button>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="world" id="world"></div>
+    <div class="zoomwrap">
+      <button class="b" id="zin" aria-label="Zoom in"><i class="ti ti-plus" aria-hidden="true"></i></button>
+      <button class="b" id="zout" aria-label="Zoom out"><i class="ti ti-minus" aria-hidden="true"></i></button>
+    </div>
+    <div class="hintbar">drag &middot; scroll &middot; click</div>
+  </div>
+
+  <div class="panel" id="panel"></div>
+
+  <div class="legend" id="legend"></div>
+</div>
+
+</div>
+<script>
+(function(){
+  var cats = {
+    root: { label: "Reinforcement learning", dot: "#5F5E5A" },
+    mb:   { label: "Model-based",  dot: "#534AB7" },
+    mf:   { label: "Model-free",   dot: "#0F6E56" },
+    dp:   { label: "Dynamic programming", dot: "#BA7517" },
+    mc:   { label: "Monte Carlo",  dot: "#D4537E" },
+    td:   { label: "Temporal difference", dot: "#378ADD" },
+    dqn:  { label: "Deep value (DQN)", dot: "#D85A30" },
+    pg:   { label: "Policy gradient", dot: "#639922" }
+  };
+
+  var P = {
+    on:  '<span class="pill p-on">on-policy</span>',
+    off: '<span class="pill p-off">off-policy</span>',
+    val: '<span class="pill p-val">value-based</span>',
+    pol: '<span class="pill p-pol">policy-based</span>',
+    ac:  '<span class="pill">actor-critic</span>',
+    mf:  '<span class="pill">model-free</span>',
+    mb:  '<span class="pill">model-based</span>',
+    deep:'<span class="pill">deep</span>',
+    det: '<span class="pill">deterministic</span>',
+    cont:'<span class="pill">continuous</span>',
+    disc:'<span class="pill">discrete</span>',
+    plan:'<span class="pill">planning</span>'
+  };
+
+  var data = {
+    cat: "root", title: "Reinforcement learning", open: true,
+    intu: "An agent in state s takes action a, receives reward r, moves to s', and learns a policy π that maximises expected discounted return G_t. Everything below is a different answer to two questions: do we have a model of the world, and do we learn values, a policy, or both?",
+    tex: "G_t = \\sum_{k=0}^{\\infty} \\gamma^k r_{t+k+1}, \\qquad \\pi^\\ast = \\argmax_\\pi \\; \\mathbb{E}_\\pi[\\,G_0\\,]",
+    when: "The root of every method here.",
+    pills: [],
+    children: [
+      { cat: "mb", title: "Model-based RL", open: true,
+        intu: "The agent has, or learns, a model of the environment — transition dynamics P(s'|s,a) and rewards R(s,a) — and uses it to plan ahead. Far more sample-efficient, but a wrong model can mislead planning.",
+        tex: "V(s) = \\max_a\\Big[\\, R(s,a) + \\gamma \\sum_{s'} P(s'\\!\\mid\\! s,a)\\,V(s') \\,\\Big]",
+        when: "Use when you can simulate or learn the dynamics cheaply (games, robotics with a simulator).",
+        pills: [P.mb],
+        children: [
+          { cat: "dp", title: "Dynamic programming",
+            intu: "Assumes a fully known model. Computes exact value functions by sweeping over all states with the Bellman equations. No sampling — the theoretical bedrock of RL.",
+            tex: "V_\\pi(s) = \\sum_a \\pi(a\\!\\mid\\! s)\\Big[\\, R(s,a) + \\gamma \\sum_{s'} P(s'\\!\\mid\\! s,a)\\,V_\\pi(s') \\,\\Big]",
+            when: "Small, fully known MDPs; teaching the core theory.",
+            pills: [P.mb, P.plan],
+            children: [
+              { cat: "dp", title: "Policy evaluation",
+                intu: "Repeatedly apply the Bellman expectation backup to compute V_π for a fixed policy until the values stop changing.",
+                tex: "V_{k+1}(s) \\leftarrow \\sum_a \\pi(a\\!\\mid\\! s)\\Big[\\, R(s,a) + \\gamma \\sum_{s'} P(s'\\!\\mid\\! s,a)\\,V_k(s') \\,\\Big]",
+                when: "The inner loop of policy iteration.",
+                pills: [P.mb, P.pol] },
+              { cat: "dp", title: "Policy iteration",
+                intu: "Alternate full policy evaluation with greedy policy improvement. Converges to the optimal policy in a finite number of iterations.",
+                tex: "\\pi'(s) = \\argmax_a \\Big[\\, R(s,a) + \\gamma \\sum_{s'} P(s'\\!\\mid\\! s,a)\\,V_\\pi(s') \\,\\Big]",
+                when: "When evaluation is cheap and you want few improvement steps.",
+                pills: [P.mb, P.pol] },
+              { cat: "dp", title: "Value iteration",
+                intu: "Collapse evaluation and improvement into a single Bellman-optimality backup. One sweep per iteration, faster in practice.",
+                tex: "V_{k+1}(s) \\leftarrow \\max_a \\Big[\\, R(s,a) + \\gamma \\sum_{s'} P(s'\\!\\mid\\! s,a)\\,V_k(s') \\,\\Big]",
+                when: "When you want the optimal values directly.",
+                pills: [P.mb, P.val] }
+            ] },
+          { cat: "mb", title: "Learn-the-model",
+            intu: "The model is unknown, so estimate P̂ and R̂ from experience, then plan with the learned model — optionally generating imagined rollouts to train a model-free learner.",
+            tex: "\\hat{P}, \\hat{R} \\;\\leftarrow\\; \\text{data}; \\qquad \\hat{s}_{t+1} \\sim p_\\phi(\\cdot \\mid s_t, a_t)",
+            when: "When real interaction is expensive but a model is learnable.",
+            pills: [P.mb],
+            children: [
+              { cat: "mb", title: "Dyna-Q",
+                intu: "Learn a model from real steps, then run extra Q-learning updates on simulated transitions. A clean bridge between model-based and model-free.",
+                tex: "Q(s,a) \\leftarrow Q(s,a) + \\alpha\\big[\\, r + \\gamma \\max_{a'} Q(s',a') - Q(s,a) \\,\\big] \\;\\; (\\text{real} + n\\text{ simulated})",
+                when: "Tabular problems where extra planning sweeps are cheap.",
+                pills: [P.mb, P.off, P.val] },
+              { cat: "mb", title: "World Models",
+                intu: "Train a generative latent dynamics model, then train the policy almost entirely inside the model's 'dream' — very sample-efficient.",
+                tex: "\\hat{s}_{t+1} \\sim p_\\phi(\\hat{s}_{t+1} \\mid \\hat{s}_t, a_t), \\qquad \\text{train } \\pi \\text{ in latent rollouts}",
+                when: "High-dimensional observations (pixels) with costly real steps.",
+                pills: [P.mb, P.deep] },
+              { cat: "mb", title: "MuZero",
+                intu: "Learns a latent model that predicts only what matters for control — reward, value, and policy — without reconstructing observations. Combines learned dynamics with MCTS.",
+                tex: "s^0 = h(o),\\;\\; s^{k} = g(s^{k-1}, a^k),\\;\\; (p, v) = f(s^{k})",
+                when: "Atari, board games, planning without rules given.",
+                pills: [P.mb, P.deep, P.plan] }
+            ] },
+          { cat: "mb", title: "Decision-time planning",
+            intu: "Rather than store a global policy, search forward from the current state at decision time, then act. Powerful when paired with a learned value/policy network.",
+            tex: "a_t = \\text{search}(s_t;\\, \\text{model}) \\quad \\text{then re-plan at } s_{t+1}",
+            when: "Large state spaces with a good simulator (games).",
+            pills: [P.mb, P.plan],
+            children: [
+              { cat: "mb", title: "MCTS",
+                intu: "Monte Carlo tree search builds a search tree by rolling out, balancing exploration and exploitation with the UCT rule, then picks the most promising action.",
+                tex: "a^\\ast = \\argmax_a \\Big[\\, Q(s,a) + c\\sqrt{\\tfrac{\\ln N(s)}{N(s,a)}} \\,\\Big]",
+                when: "Turn-based games, combinatorial search.",
+                pills: [P.mb, P.plan] },
+              { cat: "mb", title: "AlphaZero",
+                intu: "MCTS guided by a neural network that predicts a policy prior and a value, trained by self-play. The search improves the network; the network sharpens the search.",
+                tex: "\\ell = (z - v)^2 - \\pi^\\top \\log p + c\\lVert\\theta\\rVert^2",
+                when: "Perfect-information games (Go, chess, shogi).",
+                pills: [P.mb, P.deep, P.plan] }
+            ] }
+        ] },
+      { cat: "mf", title: "Model-free RL", open: true,
+        intu: "No model of P or R. The agent learns directly from sampled experience (s, a, r, s') by trial and error. Simpler and very general, but needs many more interactions.",
+        tex: "\\text{learn from samples } (s_t, a_t, r_t, s_{t+1}) \\;\\; \\text{— no } P, R",
+        when: "The default when the environment is a black box.",
+        pills: [P.mf],
+        children: [
+          { cat: "td", title: "Value-based", open: true,
+            intu: "Learn a value function (V or Q) and derive the policy implicitly by acting greedily. No explicit policy parameters; great for discrete actions.",
+            tex: "\\pi(s) = \\argmax_a Q(s,a)",
+            when: "Discrete action spaces where greedy action selection is easy.",
+            pills: [P.mf, P.val],
+            children: [
+              { cat: "mc", title: "Monte Carlo",
+                intu: "Wait until the whole episode ends, then update toward the actual return G_t. Unbiased but high variance, and it needs episodes to terminate.",
+                tex: "V(s_t) \\leftarrow V(s_t) + \\alpha\\big[\\, G_t - V(s_t) \\,\\big]",
+                when: "Episodic tasks where you can wait for the end.",
+                pills: [P.mf],
+                children: [
+                  { cat: "mc", title: "MC prediction",
+                    intu: "Estimate V_π by averaging returns observed after each visit to a state.",
+                    tex: "V(s) = \\tfrac{1}{N(s)} \\sum_{i=1}^{N(s)} G^{(i)}",
+                    when: "Evaluating a fixed policy from episodes.",
+                    pills: [P.mf, P.val] },
+                  { cat: "mc", title: "MC control · on-policy (GLIE)",
+                    intu: "Improve while you sample: run ε-greedy episodes, update Q from returns, slowly anneal ε to zero.",
+                    tex: "Q(s_t,a_t) \\leftarrow Q(s_t,a_t) + \\alpha\\big[\\, G_t - Q(s_t,a_t) \\,\\big]",
+                    when: "Episodic control without bootstrapping.",
+                    pills: [P.on, P.mf, P.val] },
+                  { cat: "mc", title: "MC off-policy · importance sampling",
+                    intu: "Collect data with a behavior policy b but evaluate a target policy π by reweighting returns with the importance ratio ρ_t.",
+                    tex: "\\rho_t = \\prod_{k=t}^{T} \\frac{\\pi(a_k\\!\\mid\\! s_k)}{b(a_k\\!\\mid\\! s_k)}, \\qquad V(s_t) \\mathrel{+}= \\alpha[\\rho_t G_t - V(s_t)]",
+                    when: "Reusing data from another policy, episodic.",
+                    pills: [P.off, P.mf] }
+                ] },
+              { cat: "td", title: "Temporal difference",
+                intu: "Update every step by bootstrapping: use r + γV(s') as a stand-in for the return. Blends MC's sampling with DP's bootstrapping — lower variance, slight bias, works online.",
+                tex: "\\delta_t = r_{t+1} + \\gamma V(s_{t+1}) - V(s_t), \\qquad V(s_t) \\mathrel{+}= \\alpha\\,\\delta_t",
+                when: "Continuing or long tasks; online learning.",
+                pills: [P.mf],
+                children: [
+                  { cat: "td", title: "TD(0)",
+                    intu: "The simplest bootstrapping rule: update V(s) one step ahead using the current estimate of the next state.",
+                    tex: "V(s_t) \\leftarrow V(s_t) + \\alpha\\big[\\, r_{t+1} + \\gamma V(s_{t+1}) - V(s_t) \\,\\big]",
+                    when: "Prediction with a single-step bootstrap.",
+                    pills: [P.mf, P.val] },
+                  { cat: "td", title: "n-step TD",
+                    intu: "Bootstrap after n steps instead of one — a tunable dial between TD(0) and Monte Carlo trading bias for variance.",
+                    tex: "G_t^{(n)} = r_{t+1} + \\gamma r_{t+2} + \\cdots + \\gamma^{n-1} r_{t+n} + \\gamma^n V(s_{t+n})",
+                    when: "When 1-step is too biased and MC too noisy.",
+                    pills: [P.mf, P.val] },
+                  { cat: "td", title: "TD(λ) · eligibility traces",
+                    intu: "Average over all n-step returns with weight λ, implemented efficiently by eligibility traces that give recent states more credit.",
+                    tex: "e_t(s) = \\gamma\\lambda\\,e_{t-1}(s) + \\mathbf{1}[s{=}s_t], \\qquad V(s) \\mathrel{+}= \\alpha\\,\\delta_t\\,e_t(s)",
+                    when: "Smooth bias/variance control, online.",
+                    pills: [P.mf, P.val] },
+                  { cat: "td", title: "SARSA · on-policy",
+                    intu: "Updates Q with the action a' the policy actually takes next — the tuple (S, A, R, S', A'). Learns the value of the policy it follows, so it behaves cautiously near risk.",
+                    tex: "Q(s_t,a_t) \\mathrel{+}= \\alpha\\big[\\, r_{t+1} + \\gamma Q(s_{t+1},a_{t+1}) - Q(s_t,a_t) \\,\\big]",
+                    when: "When you want safe, policy-consistent behavior.",
+                    pills: [P.on, P.mf, P.val] },
+                  { cat: "td", title: "Expected SARSA",
+                    intu: "Replace the sampled next action with the expectation over the policy — lower variance than SARSA, same on-policy target.",
+                    tex: "Q(s_t,a_t) \\mathrel{+}= \\alpha\\big[\\, r_{t+1} + \\gamma \\textstyle\\sum_{a'} \\pi(a'\\!\\mid\\! s')Q(s',a') - Q(s_t,a_t) \\,\\big]",
+                    when: "When you want SARSA with less noise.",
+                    pills: [P.on, P.mf, P.val] },
+                  { cat: "td", title: "Q-learning · off-policy",
+                    intu: "Learns Q* directly using the max over next actions — the greedy action, not the one taken. Independent of how data is gathered.",
+                    tex: "Q(s_t,a_t) \\mathrel{+}= \\alpha\\big[\\, r_{t+1} + \\gamma \\max_{a'} Q(s_{t+1},a') - Q(s_t,a_t) \\,\\big]",
+                    when: "When you want the optimal policy from any data.",
+                    pills: [P.off, P.mf, P.val] },
+                  { cat: "td", title: "Double Q-learning",
+                    intu: "Plain Q-learning overestimates values through the max. Two Q-functions decouple action selection from evaluation to cut that bias.",
+                    tex: "a^\\ast = \\argmax_{a'} Q_A(s',a'), \\qquad Q_A \\mathrel{+}= \\alpha[\\, r + \\gamma Q_B(s',a^\\ast) - Q_A \\,]",
+                    when: "When max-bias hurts (noisy rewards).",
+                    pills: [P.off, P.mf, P.val] }
+                ] },
+              { cat: "dqn", title: "Deep value · DQN family",
+                intu: "Scale Q-learning to high-dimensional inputs with a neural network, a replay buffer for decorrelated samples, and a slowly-updated target network for stability.",
+                tex: "L(\\theta) = \\mathbb{E}\\big[(\\, r + \\gamma \\max_{a'} Q_{\\theta^-}(s',a') - Q_\\theta(s,a) \\,)^2\\big]",
+                when: "Discrete actions from pixels or large state spaces.",
+                pills: [P.off, P.mf, P.val, P.deep],
+                children: [
+                  { cat: "dqn", title: "DQN",
+                    intu: "Deep Q-network: replay buffer + target network make neural Q-learning stable. The breakthrough on Atari.",
+                    tex: "y = r + \\gamma \\max_{a'} Q_{\\theta^-}(s',a')",
+                    when: "Baseline deep value method, discrete actions.",
+                    pills: [P.off, P.mf, P.deep] },
+                  { cat: "dqn", title: "Double DQN",
+                    intu: "Apply the double-Q trick to DQN: select the next action with the online net, evaluate it with the target net.",
+                    tex: "y = r + \\gamma Q_{\\theta^-}\\big(s', \\argmax_{a'} Q_\\theta(s',a')\\big)",
+                    when: "When DQN overestimates values.",
+                    pills: [P.off, P.mf, P.deep] },
+                  { cat: "dqn", title: "Dueling DQN",
+                    intu: "Split the network into a state-value stream and an advantage stream, then recombine — learns which states are valuable independent of action.",
+                    tex: "Q(s,a) = V(s) + A(s,a) - \\tfrac{1}{|\\mathcal{A}|}\\textstyle\\sum_{a'} A(s,a')",
+                    when: "When many actions have similar value.",
+                    pills: [P.off, P.mf, P.deep] },
+                  { cat: "dqn", title: "Prioritized replay",
+                    intu: "Sample transitions with high TD error more often — learn more from surprising experiences. Corrected with importance weights.",
+                    tex: "P(i) = \\frac{p_i^{\\,\\alpha}}{\\sum_k p_k^{\\,\\alpha}}, \\qquad p_i \\propto |\\delta_i|",
+                    when: "When some transitions are far more informative.",
+                    pills: [P.off, P.mf, P.deep] },
+                  { cat: "dqn", title: "Rainbow",
+                    intu: "Combine the strongest DQN improvements into one agent — double, dueling, prioritized replay, multi-step, distributional, and noisy nets.",
+                    tex: "\\text{Rainbow} = \\text{DQN} + \\text{Double} + \\text{Dueling} + \\text{PER} + n\\text{-step} + \\text{C51} + \\text{Noisy}",
+                    when: "When you want the strongest discrete-action value agent.",
+                    pills: [P.off, P.mf, P.deep] }
+                ] }
+            ] },
+          { cat: "pg", title: "Policy-based", open: true,
+            intu: "Parameterise the policy π_θ directly and do gradient ascent on expected return. No argmax needed — natural for continuous and stochastic actions, but high variance.",
+            tex: "\\nabla_\\theta J(\\theta) = \\mathbb{E}_\\pi\\big[\\, \\nabla_\\theta \\log \\pi_\\theta(a_t\\!\\mid\\! s_t)\\;\\Psi_t \\,\\big]",
+            when: "Continuous or stochastic action spaces.",
+            pills: [P.mf, P.pol],
+            children: [
+              { cat: "pg", title: "REINFORCE",
+                intu: "The original policy gradient. Weight the log-prob gradient by the full-episode return G_t. Simple but very high variance.",
+                tex: "\\theta \\leftarrow \\theta + \\alpha\\,\\nabla_\\theta \\log \\pi_\\theta(a_t\\!\\mid\\! s_t)\\,G_t",
+                when: "Teaching the core idea; small problems.",
+                pills: [P.on, P.mf, P.pol] },
+              { cat: "pg", title: "REINFORCE + baseline",
+                intu: "Subtract a state baseline b(s) ≈ V(s) from the return to slash variance without adding bias. The first step toward actor-critic.",
+                tex: "\\theta \\leftarrow \\theta + \\alpha\\,\\nabla_\\theta \\log \\pi_\\theta(a_t\\!\\mid\\! s_t)\\,(G_t - b(s_t))",
+                when: "When plain REINFORCE is too noisy.",
+                pills: [P.on, P.mf, P.pol] }
+            ] },
+          { cat: "pg", title: "Actor-critic", open: true,
+            intu: "Learn both an actor (policy π_θ) and a critic (value function). The critic supplies a low-variance learning signal — the TD error or advantage — to the actor.",
+            tex: "\\delta_t = r_{t+1} + \\gamma V_w(s_{t+1}) - V_w(s_t), \\qquad \\theta \\mathrel{+}= \\alpha_\\theta\\,\\delta_t\\,\\nabla_\\theta \\log \\pi_\\theta",
+            when: "Most modern deep-RL control problems.",
+            pills: [P.mf, P.ac],
+            children: [
+              { cat: "pg", title: "A2C / A3C",
+                intu: "Advantage actor-critic: the critic's advantage replaces the noisy return. A3C runs many actors in parallel asynchronously; A2C is the synchronous version.",
+                tex: "\\nabla_\\theta J = \\mathbb{E}\\big[\\, \\nabla_\\theta \\log \\pi_\\theta(a_t\\!\\mid\\! s_t)\\,\\hat{A}_t \\,\\big], \\quad \\hat{A}_t = \\delta_t",
+                when: "General on-policy control; parallel actors.",
+                pills: [P.on, P.mf, P.ac] },
+              { cat: "pg", title: "TRPO",
+                intu: "Trust-region policy optimisation: take the largest improving step that keeps the new policy within a KL trust region of the old one. Stable but second-order and heavy.",
+                tex: "\\max_\\theta \\mathbb{E}_t\\big[\\tfrac{\\pi_\\theta}{\\pi_{\\text{old}}}\\hat{A}_t\\big] \\;\\; \\text{s.t.} \\;\\; \\mathbb{E}_t[\\mathrm{KL}(\\pi_{\\text{old}} \\Vert \\pi_\\theta)] \\le \\delta",
+                when: "When you need monotonic, stable improvement.",
+                pills: [P.on, P.mf, P.ac] },
+              { cat: "pg", title: "PPO",
+                intu: "Proximal policy optimisation: clip the probability ratio so updates cannot move too far. Simple, robust, and the workhorse of modern RL and RLHF.",
+                tex: "L^{\\text{CLIP}} = \\mathbb{E}_t\\big[\\min(\\, r_t\\hat{A}_t,\\; \\mathrm{clip}(r_t,1{-}\\varepsilon,1{+}\\varepsilon)\\hat{A}_t \\,)\\big]",
+                when: "Default choice for continuous control and RLHF.",
+                pills: [P.on, P.mf, P.ac] },
+              { cat: "pg", title: "GRPO",
+                intu: "Group relative policy optimisation (DeepSeek-R1). Sample a group of outputs per prompt and normalise their rewards into advantages — no critic network needed.",
+                tex: "\\hat{A}_i = \\frac{r_i - \\mathrm{mean}(r_{1:G})}{\\mathrm{std}(r_{1:G})}, \\quad L = \\mathbb{E}[\\textstyle\\sum_i \\min(\\cdot) - \\beta\\,\\mathrm{KL}(\\pi_\\theta\\Vert\\pi_{\\text{ref}})]",
+                when: "LLM reasoning fine-tuning; critic-free PPO.",
+                pills: [P.on, P.mf, P.ac] },
+              { cat: "pg", title: "DDPG · off-policy",
+                intu: "Deep deterministic policy gradient: an off-policy actor-critic for continuous actions with a deterministic actor and a replay buffer.",
+                tex: "\\nabla_\\theta J = \\mathbb{E}\\big[\\, \\nabla_a Q(s,a)\\big|_{a=\\mu_\\theta(s)} \\,\\nabla_\\theta \\mu_\\theta(s) \\,\\big]",
+                when: "Continuous control, sample-efficient off-policy.",
+                pills: [P.off, P.mf, P.ac, P.det, P.cont] },
+              { cat: "pg", title: "TD3 · off-policy",
+                intu: "Twin-delayed DDPG: twin critics (take the min), delayed actor updates, and target-policy smoothing fix DDPG's overestimation and brittleness.",
+                tex: "y = r + \\gamma \\min_{i=1,2} Q_{\\theta_i^-}\\big(s', \\mu(s') + \\epsilon\\big)",
+                when: "A more stable DDPG for continuous control.",
+                pills: [P.off, P.mf, P.ac, P.det, P.cont] },
+              { cat: "pg", title: "SAC · off-policy",
+                intu: "Soft actor-critic: maximise reward plus policy entropy H(π) for strong exploration, with twin Q-networks. State of the art for continuous control.",
+                tex: "J(\\pi) = \\sum_t \\mathbb{E}\\big[\\, r(s_t,a_t) + \\alpha\\,\\mathcal{H}(\\pi(\\cdot\\!\\mid\\! s_t)) \\,\\big]",
+                when: "Robust, sample-efficient continuous control.",
+                pills: [P.off, P.mf, P.ac, P.cont] }
+            ] }
+        ] }
+    ]
+  };
+
+  var NW = 196, NH = 50, COLW = 250, ROW = 64;
+  var nodes = [], parentOf = {};
+  (function index(node, parent){
+    node._id = "n" + nodes.length;
+    node._expanded = !!node.open;
+    node._search = (node.title + " " + node.intu + " " + (node.when||"") + " " + (node.pills||[]).join(" ").replace(/<[^>]+>/g,"")).toLowerCase();
+    nodes.push(node);
+    parentOf[node._id] = parent;
+    (node.children || []).forEach(function(c){ index(c, node); });
+  })(data, null);
+  var byId = {}; nodes.forEach(function(n){ byId[n._id] = n; });
+
+  var stage = document.getElementById("stage");
+  var world = document.getElementById("world");
+  var panel = document.getElementById("panel");
+
+  var panX = 60, panY = 60, scale = 1;
+  var visBounds = { minX:0, minY:0, maxX:0, maxY:0 };
+  var selectedId = data._id;
+
+  function layout(){
+    var y = 0;
+    (function walk(node, depth){
+      node._x = depth * COLW;
+      var kids = node._expanded ? (node.children || []) : [];
+      if (kids.length){
+        var ys = [];
+        kids.forEach(function(c){ walk(c, depth + 1); ys.push(c._y); });
+        node._y = (ys[0] + ys[ys.length - 1]) / 2;
+      } else {
+        node._y = y; y += ROW;
+      }
+    })(data, 0);
+  }
+
+  function visibleNodes(){
+    var out = [];
+    (function walk(node){
+      out.push(node);
+      if (node._expanded) (node.children || []).forEach(walk);
+    })(data);
+    return out;
+  }
+
+  function render(){
+    layout();
+    var vis = visibleNodes();
+    var minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
+    vis.forEach(function(n){
+      minX = Math.min(minX, n._x); minY = Math.min(minY, n._y);
+      maxX = Math.max(maxX, n._x + NW); maxY = Math.max(maxY, n._y + NH);
+    });
+    visBounds = { minX:minX, minY:minY, maxX:maxX, maxY:maxY };
+
+    var W = maxX + NW, H = maxY + NH;
+    var edges = "";
+    vis.forEach(function(n){
+      if (n._expanded){
+        (n.children || []).forEach(function(c){
+          var x1 = n._x + NW, y1 = n._y + NH/2, x2 = c._x, y2 = c._y + NH/2;
+          var dx = Math.max(28, (x2 - x1) / 2);
+          edges += '<path d="M' + x1 + ' ' + y1 + ' C' + (x1+dx) + ' ' + y1 + ', ' + (x2-dx) + ' ' + y2 + ', ' + x2 + ' ' + y2 +
+                   '" fill="none" stroke="' + cats[c.cat].dot + '" stroke-opacity="0.45" stroke-width="1.5"/>';
+        });
+      }
+    });
+
+    var html = '<svg width="' + W + '" height="' + H + '">' + edges + '</svg>';
+    vis.forEach(function(n){
+      var meta = cats[n.cat];
+      var nKids = (n.children || []).length;
+      var chev = nKids ? '<i class="ti ti-chevron-' + (n._expanded ? 'down' : 'right') + ' chev" aria-hidden="true"></i>' : '';
+      var cnt = nKids ? '<span class="cnt">' + nKids + '</span>' : '';
+      var cls = "gnode" + (n._id === selectedId ? " sel" : "") + (n._dim ? " dim" : "");
+      html += '<div class="' + cls + '" data-id="' + n._id + '" style="left:' + n._x + 'px; top:' + n._y + 'px; --n-dot:' + meta.dot + '">' +
+                '<div class="gt">' + n.title + '</div>' +
+                '<div class="gm"><span class="ct"><span class="dotc" style="background:' + meta.dot + '"></span>' + meta.label + '</span>' + cnt + chev + '</div>' +
+              '</div>';
+    });
+    world.innerHTML = html;
+    applyTransform();
+  }
+
+  function applyTransform(){
+    world.style.transform = "translate(" + panX + "px," + panY + "px) scale(" + scale + ")";
+  }
+
+  var macros = { "\\argmax": "\\operatorname*{arg\\,max}" };
+  function renderPanel(){
+    var n = byId[selectedId] || data;
+    var meta = cats[n.cat];
+    panel.innerHTML =
+      '<div class="ph"><span class="dotc" style="background:' + meta.dot + '"></span>' +
+        '<span class="pt">' + n.title + '</span><span class="pc">' + meta.label + '</span>' +
+        '<span class="pills" style="margin-left:auto">' + (n.pills || []).join("") + '</span></div>' +
+      '<div class="pintu">' + n.intu + '</div>' +
+      '<div class="lab">Equation</div><div class="eqbox" id="eqTarget"></div>' +
+      '<div class="lab">When to use</div><div class="pwhen">' + (n.when || "") + '</div>';
+    var t = document.getElementById("eqTarget");
+    if (window.katex){
+      try { window.katex.render(n.tex, t, { displayMode: true, throwOnError: false, macros: macros }); }
+      catch(e){ t.textContent = n.tex; }
+    } else { t.textContent = n.tex; }
+  }
+
+  world.addEventListener("click", function(e){
+    var el = e.target.closest(".gnode");
+    if (!el) return;
+    var n = byId[el.dataset.id];
+    selectedId = n._id;
+    if ((n.children || []).length) n._expanded = !n._expanded;
+    render(); renderPanel();
+  });
+
+  var dragging = false, sx = 0, sy = 0, px0 = 0, py0 = 0;
+  stage.addEventListener("mousedown", function(e){
+    if (e.target.closest(".gnode") || e.target.closest(".b")) return;
+    dragging = true; sx = e.clientX; sy = e.clientY; px0 = panX; py0 = panY;
+    stage.classList.add("drag");
+  });
+  window.addEventListener("mousemove", function(e){
+    if (!dragging) return;
+    panX = px0 + (e.clientX - sx); panY = py0 + (e.clientY - sy);
+    applyTransform();
+  });
+  window.addEventListener("mouseup", function(){ dragging = false; stage.classList.remove("drag"); });
+
+  function zoomAt(mx, my, factor){
+    var ns = Math.min(2.2, Math.max(0.3, scale * factor));
+    panX = mx - (mx - panX) * (ns / scale);
+    panY = my - (my - panY) * (ns / scale);
+    scale = ns; applyTransform();
+  }
+  stage.addEventListener("wheel", function(e){
+    e.preventDefault();
+    var r = stage.getBoundingClientRect();
+    zoomAt(e.clientX - r.left, e.clientY - r.top, e.deltaY < 0 ? 1.12 : 1/1.12);
+  }, { passive: false });
+  document.getElementById("zin").addEventListener("click", function(){ zoomAt(stage.clientWidth/2, stage.clientHeight/2, 1.2); });
+  document.getElementById("zout").addEventListener("click", function(){ zoomAt(stage.clientWidth/2, stage.clientHeight/2, 1/1.2); });
+
+  function fitView(){
+    var cw = stage.clientWidth, ch = stage.clientHeight;
+    var w = visBounds.maxX - visBounds.minX, h = visBounds.maxY - visBounds.minY;
+    var s = Math.min((cw - 60) / w, (ch - 60) / h, 1.3);
+    s = Math.max(0.3, s);
+    scale = s;
+    panX = (cw - w * s) / 2 - visBounds.minX * s;
+    panY = (ch - h * s) / 2 - visBounds.minY * s;
+    applyTransform();
+  }
+  document.getElementById("fit").addEventListener("click", fitView);
+
+  document.getElementById("expandAll").addEventListener("click", function(){
+    nodes.forEach(function(n){ if ((n.children||[]).length) n._expanded = true; });
+    render(); fitView();
+  });
+  document.getElementById("collapseAll").addEventListener("click", function(){
+    nodes.forEach(function(n){ n._expanded = (n === data); });
+    render(); fitView();
+  });
+
+  document.getElementById("q").addEventListener("input", function(e){
+    var q = e.target.value.toLowerCase().trim();
+    if (!q){ nodes.forEach(function(n){ n._dim = false; }); render(); return; }
+    nodes.forEach(function(n){ n._match = n._search.indexOf(q) !== -1; n._dim = !n._match; });
+    nodes.forEach(function(n){
+      if (n._match){ var p = parentOf[n._id]; while (p){ p._expanded = true; p._dim = false; p = parentOf[p._id]; } }
+    });
+    render(); fitView();
+  });
+
+  var legend = document.getElementById("legend");
+  legend.innerHTML = Object.keys(cats).map(function(k){
+    return '<span><span class="dotc" style="background:' + cats[k].dot + '"></span>' + cats[k].label + '</span>';
+  }).join("");
+
+  render();
+  renderPanel();
+  fitView();
+
+  if (!window.katex){
+    var tries = 0;
+    var iv = setInterval(function(){
+      if (window.katex){ clearInterval(iv); renderPanel(); }
+      else if (++tries > 120){ clearInterval(iv); }
+    }, 50);
+  }
+})();
+</script>
+</body>
+</html>
