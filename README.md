@@ -6,7 +6,7 @@ Welcome to the **RL-Taxonomy-Visuals** repository! This project contains a colle
 
 You can view these interactive tools directly by downloading the HTML files and opening them in your browser, or via the GitHub Pages links if enabled:
 
-- **[RL Explorer](rl-explorer.html)**
+- **[RL Explorer](index.html)**
   An interactive explorer for RL concepts, providing a navigable graph or tree of how different RL algorithms and ideas are connected.
 
 - **[RL Equations](rl-equations-tabs.html)**
