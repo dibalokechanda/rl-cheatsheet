@@ -438,7 +438,7 @@ var KMACROS = { "\\argmax":"\\operatorname*{arg\\,max}", "\\E":"\\mathbb{E}" };
                     when:"Episodic control without bootstrapping.", pills:[P.on,P.mf,P.val] },
                   { cat:"mc", title:"MC off-policy · importance sampling", leaf:true,
                     intu:"Collect with behavior b, evaluate target π by reweighting returns with the ratio ρ<sub>t</sub>.",
-                    tex:"\\rho_t = \\prod_{k=t}^{T} \\frac{\\pi(a_k\\!\\mid\\! s_k)}{b(a_k\\!\\mid\\! s_k)}, \\qquad V(s_t) \\mathrel{+}= \\alpha[\\rho_t G_t - V(s_t)]",
+                    tex:"\\rho_t = \\prod_{k=t}^{T-1} \\frac{\\pi(a_k\\!\\mid\\! s_k)}{b(a_k\\!\\mid\\! s_k)}, \\qquad V(s_t) \\mathrel{+}= \\alpha[\\rho_t G_t - V(s_t)]",
                     when:"Reusing another policy's episodes.", pills:[P.off,P.mf] }
                 ] },
               { cat:"td", title:"Temporal difference",
@@ -511,7 +511,7 @@ var KMACROS = { "\\argmax":"\\operatorname*{arg\\,max}", "\\E":"\\mathbb{E}" };
                 ] }
             ] },
           { cat:"pg", title:"Policy-based", open:true,
-            intu:"Parameterise π<sub>θ</sub> directly and do gradient ascent on expected return. No argmax — natural for continuous and stochastic actions, but high variance.",
+            intu:"Parameterise π<sub>θ</sub> directly and do gradient ascent on expected return. The weight Ψ<sub>t</sub> is any credit signal for the action — the return G<sub>t</sub>, the advantage Â<sub>t</sub>, or the TD error δ<sub>t</sub> — each a different bias/variance trade-off. No argmax — natural for continuous and stochastic actions, but high variance.",
             tex:"\\nabla_\\theta J(\\theta) = \\E_\\pi\\big[\\, \\nabla_\\theta \\log \\pi_\\theta(a_t\\!\\mid\\! s_t)\\;\\Psi_t \\,\\big]",
             when:"Continuous or stochastic actions.", pills:[P.mf,P.pol],
             children:[
@@ -522,7 +522,11 @@ var KMACROS = { "\\argmax":"\\operatorname*{arg\\,max}", "\\E":"\\mathbb{E}" };
               { cat:"pg", title:"REINFORCE + baseline", leaf:true,
                 intu:"Subtract a baseline b(s) ≈ V(s) to slash variance without bias. The first step toward actor-critic.",
                 tex:"\\theta \\leftarrow \\theta + \\alpha\\,\\nabla_\\theta \\log \\pi_\\theta(a_t\\!\\mid\\! s_t)\\,(G_t - b(s_t))",
-                when:"When plain REINFORCE is too noisy.", pills:[P.on,P.mf,P.pol] }
+                when:"When plain REINFORCE is too noisy.", pills:[P.on,P.mf,P.pol] },
+              { cat:"pg", title:"GRPO", leaf:true,
+                intu:"Group relative policy optimisation (DeepSeek-R1). Samples a group of responses and standardises their rewards into the advantage, so a group baseline replaces the learned critic — a policy gradient with no value network. It keeps PPO's clipped ratio and a KL anchor to a reference policy.",
+                tex:"\\hat{A}_i = \\frac{r_i - \\mathrm{mean}(r_{1:G})}{\\mathrm{std}(r_{1:G})}, \\quad L = \\E\\big[\\textstyle\\sum_i \\min(\\cdot) - \\beta\\,\\mathrm{KL}(\\pi_\\theta\\Vert\\pi_{\\text{ref}})\\big]",
+                when:"LLM reasoning fine-tuning (DeepSeek-R1).", pills:[P.on,P.mf,P.pol] }
             ] },
           { cat:"pg", title:"Actor-critic", open:true,
             intu:"Learn both an actor (policy π<sub>θ</sub>) and a critic (value). The critic supplies a low-variance signal — the TD error or advantage — to the actor.",
@@ -545,13 +549,9 @@ var KMACROS = { "\\argmax":"\\operatorname*{arg\\,max}", "\\E":"\\mathbb{E}" };
                 intu:"Clip the probability ratio so updates stay small. Simple, robust — the workhorse of modern RL and RLHF.",
                 tex:"L^{\\text{CLIP}} = \\E_t\\big[\\min(\\, r_t\\hat{A}_t,\\; \\mathrm{clip}(r_t,1{-}\\varepsilon,1{+}\\varepsilon)\\hat{A}_t \\,)\\big]",
                 when:"Default for continuous control and RLHF.", pills:[P.on,P.mf,P.ac] },
-              { cat:"pg", title:"GRPO", leaf:true,
-                intu:"Group relative policy optimisation (DeepSeek-R1). Normalise rewards within a sampled group as the advantage — no critic network.",
-                tex:"\\hat{A}_i = \\frac{r_i - \\mathrm{mean}(r_{1:G})}{\\mathrm{std}(r_{1:G})}, \\quad L = \\E[\\textstyle\\sum_i \\min(\\cdot) - \\beta\\,\\mathrm{KL}(\\pi_\\theta\\Vert\\pi_{\\text{ref}})]",
-                when:"LLM reasoning fine-tuning.", pills:[P.on,P.mf,P.ac] },
               { cat:"pg", title:"IMPALA", leaf:true,
                 intu:"Distributed actor-learner architecture with V-trace off-policy correction for the lag between actors and the learner.",
-                tex:"v_s = V(s) + \\textstyle\\sum_t \\gamma^{t}\\big(\\prod_k c_k\\big)\\,\\rho_t\\,\\delta_t",
+                tex:"v_s = V_s + \\textstyle\\sum_{t\\ge s} \\gamma^{t-s}\\big(\\prod_{i=s}^{t-1} c_i\\big)\\,\\rho_t\\big(r_t + \\gamma V_{t+1} - V_t\\big)",
                 when:"Large-scale distributed training.", pills:[P.off,P.mf,P.ac] },
               { cat:"pg", title:"DDPG · off-policy", leaf:true,
                 intu:"Deep deterministic policy gradient: off-policy actor-critic for continuous actions with a deterministic actor and replay.",
@@ -717,7 +717,7 @@ var KMACROS = { "\\argmax":"\\operatorname*{arg\\,max}", "\\E":"\\mathbb{E}" };
       { s:"a,\\ a'", name:"Action", meaning:"what the agent does.", used:"Policies, Q(s,a).",
         detail:"The decision taken in a state. Discrete (left / right / fire) or continuous (a torque or steering angle). a′ is the action taken in the next state. The set of available actions is written A (the action space)." },
       { s:"r,\\ r_{t+1}", name:"Reward", meaning:"scalar feedback after a step.", used:"Returns, all updates.",
-        detail:"A single number scoring the last transition. The convention used throughout this file: the action taken at step t produces the reward at step t+1. The agent never optimises r directly — it optimises the discounted sum of rewards, the return.", eg:"r_{t+1} = R(s_t, a_t)" },
+        detail:"A single number scoring the last transition. The convention used throughout this file: the action taken at step t produces the reward at step t+1. The agent never optimises r directly — it optimises the discounted sum of rewards, the return.", eg:"R(s,a) = \\E[\\,r_{t+1} \\mid s_t{=}s,\\; a_t{=}a\\,]" },
       { s:"t,\\ T", name:"Time, horizon", meaning:"timestep and terminal time.", used:"Returns, n-step methods.",
         detail:"t indexes steps within an episode. T is the final step of an episodic task (its horizon); continuing tasks set T = ∞, which is why the discount γ is needed to keep the return finite." },
       { s:"\\gamma", name:"Discount factor", meaning:"0–1; weight on future reward.", used:"Every return and Bellman equation.",
@@ -847,7 +847,7 @@ var KMACROS = { "\\argmax":"\\operatorname*{arg\\,max}", "\\E":"\\mathbb{E}" };
     { cat:"mc", name:"Monte Carlo", rows:[
       ["MC value","V(s_t) \\leftarrow V(s_t) + \\alpha\\big[\\, G_t - V(s_t) \\,\\big]","model-free"],
       ["MC control (on-policy)","Q(s_t,a_t) \\leftarrow Q(s_t,a_t) + \\alpha\\big[\\, G_t - Q(s_t,a_t) \\,\\big]","on-policy"],
-      ["MC off-policy","\\rho_t = \\prod_{k=t}^{T} \\tfrac{\\pi(a_k\\mid s_k)}{b(a_k\\mid s_k)}, \\;\\; V(s_t) \\mathrel{+}= \\alpha[\\rho_t G_t - V(s_t)]","off-policy"]
+      ["MC off-policy","\\rho_t = \\prod_{k=t}^{T-1} \\tfrac{\\pi(a_k\\mid s_k)}{b(a_k\\mid s_k)}, \\;\\; V(s_t) \\mathrel{+}= \\alpha[\\rho_t G_t - V(s_t)]","off-policy"]
     ]},
     { cat:"td", name:"Temporal difference", rows:[
       ["TD error","\\delta_t = r_{t+1} + \\gamma V(s_{t+1}) - V(s_t)","model-free"],
@@ -872,7 +872,7 @@ var KMACROS = { "\\argmax":"\\operatorname*{arg\\,max}", "\\E":"\\mathbb{E}" };
       ["GAE","\\hat{A}_t = \\sum_{l\\ge 0} (\\gamma\\lambda)^l\\,\\delta_{t+l}","actor-critic"],
       ["TRPO","L^{\\text{TRPO}} = \\E_{a_t\\sim\\pi_{\\theta_{\\text{old}}}(\\cdot\\mid s_t)}\\left[\\frac{\\pi_\\theta(a_t\\mid s_t)}{\\pi_{\\theta_{\\text{old}}}(a_t\\mid s_t)}\\,A(s_t,a_t)\\right] \\;\\;\\text{s.t.}\\;\\; \\E_{a_t\\sim\\pi_{\\theta_{\\text{old}}}(\\cdot\\mid s_t)}\\!\\left[\\mathrm{KL}\\big(\\pi_{\\theta_{\\text{old}}}(\\cdot\\mid s_t),\\,\\pi_\\theta(\\cdot\\mid s_t)\\big)\\right] \\le \\delta","actor-critic"],
       ["PPO","L^{\\text{PPO}} = \\E_{a_t\\sim\\pi_{\\theta_{\\text{old}}}(\\cdot\\mid s_t)}\\left[\\min\\!\\left(\\frac{\\pi_\\theta(a_t\\mid s_t)}{\\pi_{\\theta_{\\text{old}}}(a_t\\mid s_t)}\\,A(s_t,a_t),\\ \\mathrm{clip}\\!\\left(\\frac{\\pi_\\theta(a_t\\mid s_t)}{\\pi_{\\theta_{\\text{old}}}(a_t\\mid s_t)},\\,1\\!-\\!\\epsilon,\\,1\\!+\\!\\epsilon\\right)A(s_t,a_t)\\right)\\right]","actor-critic"],
-      ["GRPO","L^{\\text{GRPO}} = \\E_{a_t\\sim\\pi_{\\theta_{\\text{old}}}(\\cdot\\mid s_t)}\\left[\\sum_{i=1}^{G}\\min\\!\\left(\\frac{\\pi_\\theta(a_t\\mid s_t)}{\\pi_{\\theta_{\\text{old}}}(a_t\\mid s_t)}\\,A_i(s_t,a_t),\\ \\mathrm{clip}\\!\\left(\\frac{\\pi_\\theta(a_t\\mid s_t)}{\\pi_{\\theta_{\\text{old}}}(a_t\\mid s_t)},\\,1\\!-\\!\\epsilon,\\,1\\!+\\!\\epsilon\\right)A_i(s_t,a_t)\\right)\\right],\\quad A_i(s_t,a_t)=\\frac{R(\\tau_i)-\\mathrm{mean}\\big(\\{R(\\tau_i)\\}_{i=1}^{G}\\big)}{\\mathrm{std}\\big(\\{R(\\tau_i)\\}_{i=1}^{G}\\big)}","actor-critic"],
+      ["GRPO","L^{\\text{GRPO}} = \\E_{\\{\\tau_i\\}_{i=1}^{G}\\sim\\pi_{\\theta_{\\text{old}}}}\\left[\\frac{1}{G}\\sum_{i=1}^{G}\\min\\!\\left(\\rho_i\\,A_i,\\ \\mathrm{clip}\\!\\left(\\rho_i,\\,1\\!-\\!\\epsilon,\\,1\\!+\\!\\epsilon\\right)A_i\\right)\\right],\\quad \\rho_i=\\frac{\\pi_\\theta(\\tau_i)}{\\pi_{\\theta_{\\text{old}}}(\\tau_i)},\\ \\ A_i=\\frac{R(\\tau_i)-\\mathrm{mean}\\big(\\{R(\\tau_j)\\}_{j=1}^{G}\\big)}{\\mathrm{std}\\big(\\{R(\\tau_j)\\}_{j=1}^{G}\\big)}","policy-based"],
       ["DDPG","\\nabla_\\theta J = \\E\\big[\\, \\nabla_a Q(s,a)\\big|_{a=\\mu_\\theta(s)}\\,\\nabla_\\theta \\mu_\\theta(s) \\,\\big]","off-policy"],
       ["TD3 target","y = r + \\gamma \\min_{i=1,2} Q_{\\theta_i^-}\\big(s', \\mu(s')+\\epsilon\\big)","off-policy"],
       ["SAC","J(\\pi) = \\sum_t \\E\\big[\\, r(s_t,a_t) + \\alpha\\,\\mathcal{H}(\\pi(\\cdot\\!\\mid\\! s_t)) \\,\\big]","off-policy"]
@@ -1168,7 +1168,7 @@ var KMACROS = { "\\argmax":"\\operatorname*{arg\\,max}", "\\E":"\\mathbb{E}" };
     {n:"PPO",a:0,b:1,c:1,pol:"on",fam:"pg",cx:350,cy:378,note:"Clipped ratio — the workhorse of modern RL and RLHF."},
     {n:"SAC",a:0,b:1,c:1,pol:"off",fam:"pg",cx:350,cy:402,note:"Entropy-regularised twin-Q off-policy actor-critic."},
     {n:"DDPG",a:0,b:1,c:1,pol:"off",fam:"pg",cx:340,cy:425,note:"Deterministic off-policy actor-critic for continuous actions."},
-    {n:"GRPO",a:0,b:1,c:1,pol:"on",fam:"pg",cx:320,cy:440,note:"Group-normalised advantage — actor-critic without a critic net."}
+    {n:"GRPO",a:0,b:0,c:1,pol:"on",fam:"pg",cx:470,cy:408,note:"Group-normalised advantage replaces the critic — a policy gradient with no value network."}
   ];
 
   var chipsBackup=[
@@ -1266,7 +1266,7 @@ var KMACROS = { "\\argmax":"\\operatorname*{arg\\,max}", "\\E":"\\mathbb{E}" };
   var chipToTitle = {
     "Value iter.": "Value iteration", "Policy iter.": "Policy iteration", "Double Q": "Double Q-learning",
     "MC control": "MC control", "Q-learning": "Q-learning", "SARSA": "SARSA", "TD(λ)": "TD(λ)",
-    "TD3": "TD3", "SAC": "SAC", "DDPG": "DDPG", "Exp. SARSA": "Expected SARSA", "Brute-force search": "Dynamic programming"
+    "TD3": "TD3", "SAC": "SAC", "DDPG": "DDPG", "Exp. SARSA": "Expected SARSA"
   };
 
   function showChip(c){
