@@ -22,9 +22,6 @@ cd rl-cheatsheet
 
 Then open `index.html` in a modern browser.
 
-## Publishing to GitHub Pages
-
-Configure GitHub Pages to deploy the `main` branch from the repository root. The published site will serve `index.html`.
 
 ## Contributing
 
